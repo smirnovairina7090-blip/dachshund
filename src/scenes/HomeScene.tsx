@@ -24,6 +24,7 @@ export function HomeScene() {
   const y = useMotionValue(0)
   const cameraX = useSpring(x, { stiffness: 45, damping: 18 })
   const cameraY = useSpring(y, { stiffness: 45, damping: 18 })
+  const assetBase = import.meta.env.BASE_URL
 
   const handlePointer = (event: MouseEvent<HTMLElement>) => {
     const rect = event.currentTarget.getBoundingClientRect()
@@ -40,7 +41,15 @@ export function HomeScene() {
   return (
     <main className="game-shell">
       <section className="room-scene" onMouseMove={handlePointer} onMouseLeave={() => { x.set(0); y.set(0) }}>
-        <motion.div className="room-backdrop" style={{ x: cameraX, y: cameraY, scale: 1.035 }} />
+        <motion.div
+          className="room-backdrop"
+          style={{
+            x: cameraX,
+            y: cameraY,
+            scale: 1.035,
+            backgroundImage: `url(${assetBase}assets/rooms/cozy-room.svg)`,
+          }}
+        />
         <div className="sun-glow" />
         <div className="dust dust--one" />
         <div className="dust dust--two" />
@@ -61,7 +70,10 @@ export function HomeScene() {
           whileTap={{ scale: 0.96 }}
           whileHover={{ scale: 1.015 }}
         >
-          <img src="/assets/motya/dev-motya.svg" alt="Черновой игровой образ Моти" />
+          <img
+            src={`${assetBase}assets/motya/motya-game.webp`}
+            alt="Мотя - рыжая такса с загнутыми ушками и лёгкой сединой на морде"
+          />
           <span className="motya-touch">Погладить</span>
         </motion.button>
 
