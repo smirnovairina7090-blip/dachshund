@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { initialGameState, makeTasks } from '../game/store'
+import { initialGameState, makeTasks } from '../game/defaults'
 
 describe('daily plan', () => {
   it('adds an extra rest task on weekends', () => {
