@@ -31,10 +31,16 @@ export function HomeScene() {
     y.set(((event.clientY - rect.top) / rect.height - 0.5) * -7)
   }
 
+  const motyaAnimation = mood === 'excited'
+    ? { y: [0, -14, -5, 0], rotate: [0, 1.5, -1.5, 0] }
+    : mood === 'happy'
+      ? { y: [0, -10, 0], rotate: [0, -1, 0] }
+      : { y: 0, rotate: 0 }
+
   return (
     <main className="game-shell">
       <section className="room-scene" onMouseMove={handlePointer} onMouseLeave={() => { x.set(0); y.set(0) }}>
-        <motion.div className="room-backdrop" style={{ x: cameraX, y: cameraY }} />
+        <motion.div className="room-backdrop" style={{ x: cameraX, y: cameraY, scale: 1.035 }} />
         <div className="sun-glow" />
         <div className="dust dust--one" />
         <div className="dust dust--two" />
@@ -49,6 +55,9 @@ export function HomeScene() {
           type="button"
           aria-label="Погладить Мотю"
           onClick={() => interact('pet')}
+          style={{ x: '-50%' }}
+          animate={motyaAnimation}
+          transition={{ duration: mood === 'excited' ? 0.8 : 0.6, ease: 'easeOut' }}
           whileTap={{ scale: 0.96 }}
           whileHover={{ scale: 1.015 }}
         >
