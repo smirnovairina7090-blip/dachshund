@@ -1,17 +1,22 @@
 {
   "name": "motya-life",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:android:web": "CAPACITOR_BUILD=1 npm run build",
+    "android:sync": "npx cap sync android",
+    "android:open": "npx cap open android",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
     "framer-motion": "^12.23.12",
     "idb-keyval": "^6.2.2",
     "react": "^19.1.1",
@@ -20,6 +25,7 @@
     "zustand": "^5.0.7"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.0.0",
     "@eslint/js": "^9.33.0",
     "@types/node": "^22.17.2",
     "@types/react": "^19.1.10",
