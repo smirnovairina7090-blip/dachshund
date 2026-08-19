@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import App from './App'
+import PawQuestGame from './PawQuestGame'
 import { dogBreedById, dogBreeds, type DogBreedId } from './data/dogBreeds'
 import {
   DOG_PROFILE_STORAGE_KEY,
@@ -17,6 +17,10 @@ function loadProfile() {
   return parseDogProfile(localStorage.getItem(DOG_PROFILE_STORAGE_KEY))
 }
 
+function dogPortrait(breedId: DogBreedId) {
+  return `${BASE}assets/pawquest/${breedId}-portrait.webp`
+}
+
 export default function PawQuestRoot() {
   const [profile, setProfile] = useState<DogProfile | null>(() => loadProfile())
   const [editing, setEditing] = useState(() => !loadProfile())
@@ -25,7 +29,6 @@ export default function PawQuestRoot() {
   const [error, setError] = useState('')
 
   const selectedBreed = useMemo(() => dogBreedById[draftBreed], [draftBreed])
-  const activeBreed = profile ? dogBreedById[profile.breedId] : selectedBreed
 
   function openProfileEditor() {
     setDraftName(profile?.name ?? '')
@@ -56,24 +59,12 @@ export default function PawQuestRoot() {
         <section className="onboarding-card" aria-labelledby="welcome-title">
           <div className="onboarding-copy">
             <span className="onboarding-kicker">PAWQUEST</span>
-            <h1 id="welcome-title">Расскажи, кто твой напарник</h1>
-            <p>Профиль влияет на подсказки по уходу, факты, задания и будущий набор анимаций персонажа.</p>
+            <h1 id="welcome-title">Кто твой хвостик?</h1>
+            <p>Выбери породу и кличку. Дальше задания, подсказки, факты и визуальный персонаж будут подстраиваться под вашу команду.</p>
           </div>
 
           <div className="onboarding-grid">
             <div className="onboarding-form">
-              <label className="field-label" htmlFor="dog-name">Кличка</label>
-              <input
-                id="dog-name"
-                className="dog-name-input"
-                value={draftName}
-                onChange={(event) => setDraftName(event.target.value)}
-                placeholder="Например, Мотя"
-                maxLength={18}
-                autoComplete="off"
-                autoFocus
-              />
-
               <fieldset className="breed-fieldset">
                 <legend>Порода</legend>
                 <div className="breed-choice-grid">
@@ -84,13 +75,24 @@ export default function PawQuestRoot() {
                       key={breed.id}
                       onClick={() => setDraftBreed(breed.id)}
                     >
-                      <span className="breed-choice-mark">{breed.id === 'dachshund' ? '🐕' : breed.id === 'jack-russell' ? '🎾' : '🦮'}</span>
+                      <img className="breed-choice-photo" src={dogPortrait(breed.id)} alt="" />
                       <span><b>{breed.name}</b><small>{breed.subtitle}</small></span>
                       <i>{draftBreed === breed.id ? '✓' : ''}</i>
                     </button>
                   ))}
                 </div>
               </fieldset>
+
+              <label className="field-label" htmlFor="dog-name">Как зовут?</label>
+              <input
+                id="dog-name"
+                className="dog-name-input"
+                value={draftName}
+                onChange={(event) => setDraftName(event.target.value)}
+                placeholder="Например, Луна"
+                maxLength={18}
+                autoComplete="off"
+              />
 
               {error && <p className="onboarding-error" role="alert">{error}</p>}
 
@@ -101,19 +103,11 @@ export default function PawQuestRoot() {
             </div>
 
             <aside className="breed-preview">
-              <span className="breed-preview-label">ВЫБРАНО</span>
-              <div className="breed-preview-art">
-                {draftBreed === 'dachshund' ? (
-                  <img src={`${BASE}assets/motya/motya-game.webp`} alt="Игровой образ таксы" />
-                ) : (
-                  <div className="sprite-coming-soon">
-                    <span>{draftBreed === 'jack-russell' ? '🎾' : '🌊'}</span>
-                    <b>Спрайт-пак готовится</b>
-                    <small>Персонаж будет подключён без изменения профиля.</small>
-                  </div>
-                )}
+              <span className="breed-preview-label">ТВОЙ НАПАРНИК</span>
+              <div className="breed-preview-art polished">
+                <img src={dogPortrait(draftBreed)} alt={`${selectedBreed.name}, игровой персонаж`} />
               </div>
-              <h2>{selectedBreed.name}</h2>
+              <h2>{draftName.trim() || selectedBreed.name}</h2>
               <p>{selectedBreed.dailyFocus}</p>
               <div className="temperament-list">
                 {selectedBreed.temperament.map((trait) => <span key={trait}>{trait}</span>)}
@@ -126,20 +120,10 @@ export default function PawQuestRoot() {
   }
 
   return (
-    <div className="pawquest-root">
-      <div className="profile-ribbon">
-        <div>
-          <span className="profile-ribbon-kicker">{activeBreed.name}</span>
-          <b>{profile.name}</b>
-          <small>{activeBreed.subtitle}</small>
-        </div>
-        <div className="profile-ribbon-tip">
-          <span>💡</span>
-          <p>{activeBreed.dailyFocus}</p>
-        </div>
-        <button type="button" onClick={openProfileEditor}>Профиль</button>
-      </div>
-      <App key={`${profile.breedId}-${profile.name}-${profile.updatedAt}`} />
-    </div>
+    <PawQuestGame
+      profile={profile}
+      breed={dogBreedById[profile.breedId]}
+      onEditProfile={openProfileEditor}
+    />
   )
 }
