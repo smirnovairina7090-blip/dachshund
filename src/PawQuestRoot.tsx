@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import PawQuestGame from './PawQuestGame'
+import PawQuestProfileBridge from './components/PawQuestProfileBridge'
 import { dogBreedById, dogBreeds, type DogBreedId } from './data/dogBreeds'
 import {
   DOG_PROFILE_STORAGE_KEY,
@@ -119,11 +120,16 @@ export default function PawQuestRoot() {
     )
   }
 
+  const activeBreed = dogBreedById[profile.breedId]
+
   return (
-    <PawQuestGame
-      profile={profile}
-      breed={dogBreedById[profile.breedId]}
-      onEditProfile={openProfileEditor}
-    />
+    <>
+      <PawQuestGame
+        profile={profile}
+        breed={activeBreed}
+        onEditProfile={openProfileEditor}
+      />
+      <PawQuestProfileBridge profile={profile} breed={activeBreed} />
+    </>
   )
 }
