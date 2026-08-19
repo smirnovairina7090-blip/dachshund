@@ -1,0 +1,70 @@
+.pq-secondary-screen { padding-bottom: 30px; }
+.pq-back-button { border: 0; background: transparent; padding: 4px 0 14px; color: #1b769d; font-weight: 900; cursor: pointer; }
+.pq-secondary-kicker { color: #2089ad; font-size: 10px; font-weight: 900; letter-spacing: .12em; }
+.pq-breed-hero-card { display: grid; grid-template-columns: minmax(180px,.75fr) 1fr; gap: 22px; align-items: center; padding: 22px; border-radius: 28px; background: linear-gradient(145deg,#fff2d9,#e9f6ed); box-shadow: 0 18px 45px rgba(67,85,75,.11); }
+.pq-secondary-dog { height: 270px; border-radius: 23px; background: rgba(255,255,255,.48); overflow: hidden; }
+.pq-secondary-dog img { height: 100%; width: 100%; object-fit: contain; }
+.pq-breed-hero-card h1 { margin: 4px 0 5px; font-size: clamp(30px,6vw,50px); }
+.pq-breed-hero-card p { color: #6c625a; }
+.pq-traits { display: flex; gap: 7px; flex-wrap: wrap; }
+.pq-traits span { padding: 7px 10px; border-radius: 99px; background: rgba(255,255,255,.72); font-size: 11px; font-weight: 800; }
+.pq-info-card { display: flex; gap: 13px; align-items: flex-start; margin-top: 14px; padding: 17px; border-radius: 20px; background: #fffaf0; border: 1px solid rgba(104,79,51,.09); }
+.pq-info-card > span { font-size: 22px; }
+.pq-info-card b { display: block; font-size: 13px; }
+.pq-info-card p { margin: 5px 0 0; color: #766c64; font-size: 12px; line-height: 1.55; }
+.pq-fact-list { display: grid; gap: 9px; }
+.pq-fact-list article { display: grid; grid-template-columns: 36px 1fr; gap: 12px; align-items: start; padding: 15px; border-radius: 18px; background: #fffdf8; box-shadow: 0 8px 24px rgba(70,56,43,.06); }
+.pq-fact-list article > span { width: 32px; height: 32px; display:grid; place-items:center; border-radius: 11px; background:#e9f7fb; color:#177da3; font-weight:900; }
+.pq-fact-list p { margin: 3px 0 0; color:#655e58; font-size:12px; line-height:1.55; }
+.pq-achievement-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.pq-achievement-grid article { min-height: 170px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px 12px; border-radius:24px; background:#fffdf8; border:1px solid rgba(74,58,43,.08); }
+.pq-achievement-grid article.unlocked { background: linear-gradient(160deg,#fff8dc,#eef8ff); box-shadow:0 14px 35px rgba(64,91,100,.10); }
+.pq-achievement-grid article.locked { opacity:.58; filter:saturate(.35); }
+.pq-achievement-grid article > span { font-size:42px; margin-bottom:8px; }
+.pq-achievement-grid b { font-size:14px; }
+.pq-achievement-grid p { margin:6px 0; color:#746b64; font-size:11px; line-height:1.4; }
+.pq-achievement-grid small { color:#2185aa; font-weight:900; }
+.pq-diary-count { padding:8px 11px; border-radius:99px; background:#e8f6fb; color:#197da3; font-size:11px; font-weight:900; }
+.pq-diary-compose { display:grid; grid-template-columns:minmax(150px,.7fr) 1.3fr; gap:14px; padding:16px; border-radius:26px; background:linear-gradient(145deg,#fff3de,#eef9f2); }
+.pq-diary-photo { min-height:220px; border-radius:20px; overflow:hidden; background:rgba(255,255,255,.55); }
+.pq-diary-dog { height:100%; }
+.pq-diary-dog img { width:100%; height:100%; object-fit:contain; }
+.pq-diary-fields { display:grid; gap:9px; align-content:center; }
+.pq-diary-fields input,.pq-diary-fields textarea,.pq-health-grid input { width:100%; border:1px solid rgba(65,72,65,.12); background:#fffdf9; border-radius:14px; padding:12px 13px; color:#2e3434; resize:none; }
+.pq-diary-fields button { min-height:45px; border:0; border-radius:14px; background:linear-gradient(180deg,#2da7ce,#0879a4); color:white; font-weight:900; cursor:pointer; }
+.pq-diary-list { display:grid; gap:10px; margin-top:15px; }
+.pq-diary-list article,.pq-empty-state { padding:16px; border-radius:19px; background:#fffdf9; border:1px solid rgba(74,58,43,.08); }
+.pq-diary-list article small { color:#9b806c; font-weight:800; }
+.pq-diary-list article b { display:block; margin:5px 0; }
+.pq-diary-list article p { margin:0; color:#6f6760; font-size:12px; line-height:1.5; }
+.pq-empty-state { text-align:center; padding:30px 18px; }
+.pq-empty-state > span { font-size:38px; }
+.pq-empty-state b { display:block; margin:7px 0; }
+.pq-empty-state p { margin:0; color:#77706a; font-size:12px; }
+.pq-health-heart { font-size:36px; color:#ef7171; }
+.pq-health-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.pq-health-grid label { display:grid; grid-template-columns:38px 1fr; gap:10px; padding:15px; border-radius:19px; background:#fffdf9; border:1px solid rgba(74,58,43,.08); }
+.pq-health-grid label > span { grid-row:1 / span 2; font-size:25px; }
+.pq-health-grid label b { display:block; font-size:12px; }
+.pq-health-grid label small { color:#8b7f76; font-size:10px; }
+.pq-health-grid input { grid-column:1 / -1; margin-top:5px; }
+.pq-health-grid label.wide { grid-column:1 / -1; }
+.pq-info-card.health { background:#eef9f5; }
+.pq-profile-summary { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:10px 0 14px; }
+.pq-profile-summary div { padding:11px 7px; text-align:center; border-radius:15px; background:#fff9ee; border:1px solid rgba(93,71,53,.07); }
+.pq-profile-summary b { display:block; font-size:15px; }
+.pq-profile-summary small { display:block; margin-top:2px; color:#82766d; font-size:8px; }
+.pq-home-feature-grid { display:grid; grid-template-columns:1.35fr .65fr; gap:11px; }
+.pq-home-feature-grid .pq-adventure-card { margin:0; }
+.pq-home-diary-card { display:flex; flex-direction:column; justify-content:center; align-items:flex-start; gap:6px; min-height:150px; padding:18px; border:0; border-radius:24px; background:linear-gradient(145deg,#e8f6fb,#f7e6f3); text-align:left; color:#36434a; cursor:pointer; }
+.pq-home-diary-card > span { font-size:28px; }
+.pq-home-diary-card small { color:#2585a7; font-weight:900; letter-spacing:.08em; }
+.pq-home-diary-card b { display:block; margin:3px 0; }
+.pq-home-diary-card p { margin:0; color:#6d6870; font-size:10px; line-height:1.4; }
+@media (max-width:700px) {
+  .pq-breed-hero-card,.pq-diary-compose { grid-template-columns:1fr; }
+  .pq-secondary-dog { height:220px; }
+  .pq-health-grid { grid-template-columns:1fr; }
+  .pq-health-grid label.wide { grid-column:auto; }
+  .pq-home-feature-grid { grid-template-columns:1fr; }
+}
