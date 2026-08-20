@@ -1,424 +1,108 @@
-(() => {
-  const W = 1916;
-  const H = 821;
-  const FT = 470;
-  const FB = 785;
-  const CAMERA_HOME = 690;
-
-  const stage = document.getElementById('stage');
-  const scene = document.getElementById('scene');
-  const layer = document.getElementById('objects');
-  const card = document.getElementById('selectionCard');
-  const nameEl = document.getElementById('selectionName');
-  const hint = document.getElementById('hint');
-  const reset = document.getElementById('resetBtn');
-  const arrange = document.getElementById('arrangeBtn');
-  const center = document.getElementById('centerBtn');
-  const mode = document.getElementById('modeLabel');
-
-  const floorGuide = document.createElement('div');
-  floorGuide.className = 'floor-guide';
-  scene.insertBefore(floorGuide, layer);
-
-  const spriteStyle = document.createElement('style');
-  spriteStyle.textContent = `
-    .item .sprite{
-      width:100%;
-      aspect-ratio:1;
-      background-size:300% 100%;
-      background-repeat:no-repeat;
-      pointer-events:none
-    }
-    .item.is-ambient .sprite{
-      animation:breathe 5.8s ease-in-out infinite;
-      transform-origin:center bottom
-    }
-    .item.fireplace .sprite{
-      animation:firewarm 2.4s ease-in-out infinite
-    }
-  `;
-  document.head.appendChild(spriteStyle);
-
-  const initial = [
-    {id:'rug',name:'Джутовый ковёр',tile:0,x:1040,y:712,w:440,base:.78,lockDepth:true,minY:620},
-    {id:'sofa',name:'Диван',tile:1,x:1045,y:630,w:395,base:.88,ambient:true},
-    {id:'stove',name:'Камин',tile:2,x:430,y:606,w:205,base:.82,cls:'fireplace'},
-    {id:'bookcase',name:'Книжный шкаф',tile:3,x:1615,y:602,w:225,base:.78,ambient:true},
-    {id:'armchair',name:'Кресло',tile:4,x:735,y:672,w:220,base:.82,ambient:true},
-    {id:'table',name:'Чайный столик',tile:5,x:1285,y:718,w:205,base:.72},
-    {id:'bed',name:'Лежанка Моти',tile:6,x:1490,y:720,w:220,base:.72,ambient:true},
-    {id:'garden',name:'Тумба с растениями',tile:7,x:255,y:600,w:335,base:.75,ambient:true},
-    {id:'plant',name:'Монстера',tile:8,x:1800,y:626,w:142,base:.70,ambient:true}
-  ];
-
-  const s = {
-    scale: 1,
-    camera: CAMERA_HOME,
-    target: CAMERA_HOME,
-    vel: 0,
-    pointer: null,
-    selected: null,
-    items: [],
-    last: performance.now()
+(()=>{const W=1916,H=821,CAM=720,stage=document.getElementById('stage'),scene=document.getElementById('scene'),objects=document.getElementById('objects'),floorGuide=document.getElementById('floorGuide'),selected=document.getElementById('selected'),selectedName=document.getElementById('selectedName'),hint=document.getElementById('hint'),mode=document.getElementById('mode');const defs=[
+{id:'garden',name:'Тумба с растениями',src:'assets/garden.webp',x:300,y:600,w:400,ambient:1,minY:520},
+{id:'stove',name:'Камин',src:'assets/stove.webp',x:565,y:615,w:285,fire:1,minY:515},
+{id:'armchair',name:'Кресло',src:'assets/armchair.webp',x:760,y:685,w:285,ambient:1},
+{id:'sofa',name:'Диван',src:'assets/sofa.webp',x:1060,y:655,w:505,ambient:1,minY:525},
+{id:'rug',name:'Джутовый ковёр',src:'assets/rug.webp',x:1120,y:755,w:545,flat:1,minY:625},
+{id:'table',name:'Чайный столик',src:'assets/table.webp',x:1325,y:725,w:225},
+{id:'bed',name:'Лежанка Моти',src:'assets/round_bed.webp',x:1515,y:735,w:220,ambient:1},
+{id:'bookcase',name:'Книжный шкаф',src:'assets/bookcase.webp',x:1660,y:625,w:405,ambient:1,minY:545},
+{id:'plant',name:'Монстера',src:'assets/plant.webp',x:1850,y:655,w:180,ambient:1}
+];const s={scale:1,camera:CAM,target:CAM,vel:0,p:null,sel:null,items:[],last:performance.now()};let saved={};try{saved=JSON.parse(localStorage.getItem('motya-hq-layout-v2')||'{}')}catch{}const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t;const floor={backY:500,frontY:790,backL:105,backR:1812,frontL:20,frontR:1896};function depth(y){return .86+clamp((y-floor.backY)/(floor.frontY-floor.backY),0,1)*.20}function edges(y){const t=clamp((y-floor.backY)/(floor.frontY-floor.backY),0,1);return{l:lerp(floor.backL,floor.frontL,t),r:lerp(floor.backR,floor.frontR,t)}}function constrain(i,x,y){const yy=clamp(y,i.minY??floor.backY,floor.frontY),d=i.flat?1:depth(yy),half=i.w*d*.34+15,e=edges(yy);return{x:clamp(x,e.l+half,e.r-half),y:yy,edge:y!==yy||x<e.l+half||x>e.r-half}}function render(i){const d=i.flat?1:depth(i.y);i.el.style.left=i.x+'px';i.el.style.top=i.y+'px';i.el.style.setProperty('--scale',d.toFixed(4));i.el.style.zIndex=100+Math.round(i.y);if(!i.el.classList.contains('selected')&&!i.el.classList.contains('dragging'))i.el.style.filter=`drop-shadow(0 ${Math.round(7+d*5)}px ${Math.round(6+d*3)}px rgba(58,28,10,${(.18+(i.y-floor.backY)/1500).toFixed(2)}))`}function add(d){const p=saved[d.id]||{},pos=constrain(d,p.x??d.x,p.y??d.y),i={...d,x:pos.x,y:pos.y},el=document.createElement('div');el.className='item'+(d.ambient?' ambient':'')+(d.fire?' fire':'');el.dataset.id=d.id;el.style.width=d.w+'px';const img=document.createElement('img');img.src=d.src;img.alt='';img.draggable=false;el.appendChild(img);objects.appendChild(el);i.el=el;s.items.push(i);render(i)}defs.forEach(add);for(let n=0;n<24;n++){const q=document.createElement('i');q.style.left=(1050+Math.random()*520)+'px';q.style.top=(290+Math.random()*350)+'px';q.style.setProperty('--d',(6+Math.random()*8)+'s');q.style.setProperty('--x',(-22+Math.random()*50)+'px');q.style.animationDelay=(-Math.random()*10)+'s';document.getElementById('dust').appendChild(q)}function maxCam(){return Math.max(0,W-stage.clientWidth/s.scale)}function updateScale(){const r=stage.getBoundingClientRect();s.scale=r.width/r.height>.9?Math.max(r.height/H,r.width/W):r.height/H*.94;scene.style.top=r.height/2+'px';const m=maxCam();s.camera=clamp(s.camera,0,m);s.target=clamp(s.target,0,m)}function point(x,y){const r=stage.getBoundingClientRect(),top=r.height/2-H*s.scale/2;return{x:s.camera+(x-r.left)/s.scale,y:(y-r.top-top)/s.scale}}function from(t){const e=t.closest?.('.item');return e?s.items.find(i=>i.id===e.dataset.id):null}function choose(i){if(s.sel&&s.sel!==i){s.sel.el.classList.remove('selected');render(s.sel)}s.sel=i;if(i){i.el.classList.add('selected');i.el.style.filter='';selectedName.textContent=i.name;selected.hidden=false}else selected.hidden=true}function save(){const o={};s.items.forEach(i=>o[i.id]={x:Math.round(i.x),y:Math.round(i.y)});localStorage.setItem('motya-hq-layout-v2',JSON.stringify(o))}function vibrate(n){try{navigator.vibrate?.(n)}catch{}}function hideHint(){hint.classList.add('hide');setTimeout(()=>hint.style.display='none',450)}stage.addEventListener('pointerdown',e=>{
+  if(e.target.closest('button')||e.target.closest('.hud')||e.target.closest('.dock'))return;
+  const arrangeMode=stage.classList.contains('arrange-mode');
+  const item=arrangeMode?from(e.target):null;
+  const w=point(e.clientX,e.clientY);
+  stage.setPointerCapture?.(e.pointerId);
+  s.vel=0;
+  s.p={
+    id:e.pointerId,
+    kind:item?'item':'pan',
+    item,
+    sx:e.clientX,sy:e.clientY,lx:e.clientX,ly:e.clientY,lt:performance.now(),
+    cam:s.camera,
+    dx:item?w.x-item.x:0,dy:item?w.y-item.y:0,
+    started:false,moved:false,buzz:false
   };
-
-  let saved = {};
-  try {
-    saved = JSON.parse(localStorage.getItem('motya-room-layout') || '{}');
-  } catch {}
-
-  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-  const lerp = (a, b, t) => a + (b - a) * t;
-  const depth = y => .78 + clamp((y - FT) / (FB - FT), 0, 1) * .28;
-
-  // Пол комнаты - перспективная трапеция. Чем дальше предмет, тем уже допустимая зона.
-  const floor = {
-    backY: 505,
-    frontY: 785,
-    backLeft: 105,
-    backRight: 1810,
-    frontLeft: 20,
-    frontRight: 1896
-  };
-
-  function floorEdges(y) {
-    const t = clamp((y - floor.backY) / (floor.frontY - floor.backY), 0, 1);
-    return {
-      left: lerp(floor.backLeft, floor.frontLeft, t),
-      right: lerp(floor.backRight, floor.frontRight, t)
-    };
+  if(item){
+    choose(item);
+  }else if(!arrangeMode){
+    choose(null);
   }
+});
 
-  function constrainItem(i, x, y) {
-    const minY = i.minY ?? floor.backY;
-    const maxY = floor.frontY;
-    const cy = clamp(y, minY, maxY);
-    const d = i.lockDepth ? 1 : depth(cy);
-    const half = i.w * i.base * d * .31 + 16;
-    const edges = floorEdges(cy);
-    return {
-      x: clamp(x, edges.left + half, edges.right - half),
-      y: cy,
-      hitBoundary: y !== cy || x < edges.left + half || x > edges.right - half
-    };
-  }
+stage.addEventListener('pointermove',e=>{
+  const p=s.p;
+  if(!p||p.id!==e.pointerId)return;
+  const totalX=e.clientX-p.sx,totalY=e.clientY-p.sy;
+  const distance=Math.hypot(totalX,totalY);
 
-  function render(i) {
-    const d = i.lockDepth ? 1 : depth(i.y);
-    i.el.style.left = `${i.x}px`;
-    i.el.style.top = `${i.y}px`;
-    i.el.style.setProperty('--item-scale', (i.base * d).toFixed(4));
-    i.el.style.zIndex = 100 + Math.round(i.y);
-
-    if (!i.el.classList.contains('is-selected') && !i.el.classList.contains('is-dragging')) {
-      i.el.style.filter =
-        `drop-shadow(0 ${Math.round(6 + d * 5)}px ${Math.round(5 + d * 3)}px rgba(64,33,15,${(.16 + clamp((i.y - FT) / 360, 0, 1) * .14).toFixed(2)}))`;
+  if(p.kind==='pan'){
+    if(!p.started){
+      if(distance<7)return;
+      if(Math.abs(totalY)>Math.abs(totalX)*1.15)return;
+      p.started=true;
+      p.moved=true;
+      stage.classList.add('panning');
+      hideHint();
     }
+    const m=maxCam();
+    s.target=clamp(p.cam-totalX/s.scale,0,m);
+    s.camera=s.target;
+    const now=performance.now(),dt=Math.max(8,now-p.lt);
+    const raw=-((e.clientX-p.lx)/s.scale)/dt*16.67;
+    s.vel=clamp(raw,-17,17);
+    p.lx=e.clientX;p.ly=e.clientY;p.lt=now;
+    return;
   }
 
-  function add(d) {
-    const p = saved[d.id] || {};
-    const start = constrainItem(d, p.x ?? d.x, p.y ?? d.y);
-    const i = {...d, x:start.x, y:start.y};
-
-    const el = document.createElement('div');
-    el.className = `item ${d.ambient ? 'is-ambient' : ''} ${d.cls || ''}`;
-    el.dataset.id = d.id;
-    el.style.width = `${d.w}px`;
-
-    const sp = document.createElement('div');
-    const row = Math.floor(d.tile / 3);
-    const col = d.tile % 3;
-    sp.className = 'sprite';
-    sp.style.backgroundImage = `url(assets/atlas${row}.webp)`;
-    sp.style.backgroundPosition = `${col * 50}% 0%`;
-
-    el.appendChild(sp);
-    layer.appendChild(el);
-    i.el = el;
-    s.items.push(i);
-    render(i);
-  }
-
-  initial.forEach(add);
-
-  const dust = document.getElementById('dust');
-  for (let i = 0; i < 26; i++) {
-    const p = document.createElement('i');
-    p.style.left = `${980 + Math.random() * 590}px`;
-    p.style.top = `${300 + Math.random() * 360}px`;
-    p.style.setProperty('--dur', `${6 + Math.random() * 7}s`);
-    p.style.setProperty('--dx', `${-25 + Math.random() * 55}px`);
-    p.style.animationDelay = `${-Math.random() * 9}s`;
-    dust.appendChild(p);
-  }
-
-  function updateScale() {
-    const r = stage.getBoundingClientRect();
-    const portraitFactor = r.width < r.height ? .91 : 1;
-    const targetHeight = r.height * portraitFactor;
-    s.scale = Math.max(r.height / H * .88, targetHeight / H);
-
-    if (r.width / r.height > 1.25) {
-      s.scale = Math.max(r.height / H, r.width / W);
-    }
-
-    scene.style.top = `${r.height / 2}px`;
-    const m = maxCam();
-    s.camera = clamp(s.camera, 0, m);
-    s.target = clamp(s.target, 0, m);
-  }
-
-  function maxCam() {
-    return Math.max(0, W - stage.clientWidth / s.scale);
-  }
-
-  function worldPoint(x, y) {
-    const r = stage.getBoundingClientRect();
-    const top = r.height / 2 - H * s.scale / 2;
-    return {
-      x: s.camera + (x - r.left) / s.scale,
-      y: (y - r.top - top) / s.scale
-    };
-  }
-
-  function itemFrom(target) {
-    const el = target.closest?.('.item');
-    return el ? s.items.find(i => i.id === el.dataset.id) : null;
-  }
-
-  function select(i) {
-    if (s.selected && s.selected !== i) {
-      s.selected.el.classList.remove('is-selected');
-      render(s.selected);
-    }
-
-    s.selected = i;
-
-    if (i) {
-      i.el.classList.add('is-selected');
-      i.el.style.filter = '';
-      nameEl.textContent = i.name;
-      card.hidden = false;
-    } else {
-      card.hidden = true;
-    }
-  }
-
-  function save() {
-    const data = {};
-    s.items.forEach(i => {
-      data[i.id] = {x: Math.round(i.x), y: Math.round(i.y)};
-    });
-    localStorage.setItem('motya-room-layout', JSON.stringify(data));
-  }
-
-  function hideHint() {
-    hint.classList.add('is-hidden');
-    setTimeout(() => {
-      hint.style.display = 'none';
-    }, 500);
-  }
-
-  function haptic(ms = 8) {
-    if ('vibrate' in navigator) {
-      try { navigator.vibrate(ms); } catch {}
-    }
-  }
-
-  function showFloorGuide(show) {
-    floorGuide.classList.toggle('is-visible', show);
-  }
-
-  stage.addEventListener('pointerdown', e => {
-    if (e.target.closest('button') || e.target.closest('.dock') || e.target.closest('.hud')) return;
-
-    stage.setPointerCapture?.(e.pointerId);
-    const i = itemFrom(e.target);
-    const w = worldPoint(e.clientX, e.clientY);
-
-    s.pointer = {
-      id: e.pointerId,
-      type: i ? 'item' : 'pan',
-      item: i,
-      startX: e.clientX,
-      lastX: e.clientX,
-      lastT: performance.now(),
-      startCam: s.target,
-      dx: i ? w.x - i.x : 0,
-      dy: i ? w.y - i.y : 0,
-      boundaryBuzzed: false
-    };
-
-    s.vel = 0;
-
-    if (i) {
-      select(i);
-      i.el.classList.add('is-dragging');
-      i.el.style.filter = '';
-      showFloorGuide(true);
-      haptic(11);
-    } else {
-      select(null);
-      stage.classList.add('is-panning');
-    }
-  });
-
-  stage.addEventListener('pointermove', e => {
-    const p = s.pointer;
-    if (!p || p.id !== e.pointerId) return;
-
+  if(!p.started){
+    if(distance<8)return;
+    p.started=true;
+    p.moved=true;
+    p.item.el.classList.add('dragging');
+    p.item.el.style.filter='';
+    floorGuide.classList.add('show');
     hideHint();
+    vibrate(8);
+  }
 
-    if (p.type === 'pan') {
-      const dx = e.clientX - p.startX;
-      const m = maxCam();
-      const over = 50 / s.scale;
-      s.target = clamp(p.startCam - dx / s.scale, -over, m + over);
+  const w=point(e.clientX,e.clientY),i=p.item,pos=constrain(i,w.x-p.dx,w.y-p.dy);
+  i.x=pos.x;i.y=pos.y;render(i);
+  floorGuide.classList.toggle('edge',pos.edge);
+  if(pos.edge&&!p.buzz){vibrate(4);p.buzz=true}
+  else if(!pos.edge)p.buzz=false;
+});
 
-      const now = performance.now();
-      const dt = Math.max(8, now - p.lastT);
-      s.vel = -((e.clientX - p.lastX) / s.scale) / dt * 16.67;
-      p.lastX = e.clientX;
-      p.lastT = now;
-      return;
-    }
+function finish(e){
+  const p=s.p;
+  if(!p||(e&&p.id!==e.pointerId))return;
+  stage.classList.remove('panning');
+  floorGuide.classList.remove('show','edge');
 
-    const w = worldPoint(e.clientX, e.clientY);
-    const i = p.item;
-    const rawX = w.x - p.dx;
-    const rawY = w.y - p.dy;
-    const pos = constrainItem(i, rawX, rawY);
-
-    i.x = pos.x;
-    i.y = pos.y;
-    render(i);
-
-    floorGuide.classList.toggle('is-at-edge', pos.hitBoundary);
-
-    if (pos.hitBoundary && !p.boundaryBuzzed) {
-      haptic(5);
-      p.boundaryBuzzed = true;
-    } else if (!pos.hitBoundary) {
-      p.boundaryBuzzed = false;
-    }
-  });
-
-  function finish(e) {
-    const p = s.pointer;
-    if (!p || (e && p.id !== e.pointerId)) return;
-
-    stage.classList.remove('is-panning');
-    showFloorGuide(false);
-    floorGuide.classList.remove('is-at-edge');
-
-    if (p.item) {
-      const sprite = p.item.el.querySelector('.sprite');
-      p.item.el.classList.remove('is-dragging');
-      p.item.el.classList.add('is-selected');
-      p.item.el.style.filter = '';
-      haptic(8);
-
-      if (sprite?.animate) {
-        sprite.animate(
-          [
-            {transform:'translateY(-3px) scale(1.025)'},
-            {transform:'translateY(1px) scale(.992)', offset:.62},
-            {transform:'translateY(0) scale(1)'}
-          ],
-          {duration:260, easing:'cubic-bezier(.2,.8,.2,1)'}
-        );
-      }
-
+  if(p.kind==='item'){
+    if(p.started){
+      const img=p.item.el.querySelector('img');
+      p.item.el.classList.remove('dragging');
+      p.item.el.classList.add('selected');
+      p.item.el.style.filter='';
+      vibrate(6);
+      img.animate?.([
+        {transform:'translateY(-2px) scale(1.012)'},
+        {transform:'translateY(.5px) scale(.996)',offset:.62},
+        {transform:'none'}
+      ],{duration:190,easing:'cubic-bezier(.2,.75,.25,1)'});
       save();
+    }else{
+      choose(p.item);
+      vibrate(3);
     }
-
-    s.pointer = null;
+  }else if(!p.started){
+    if(stage.classList.contains('arrange-mode'))choose(null);
+    s.vel=0;
   }
-
-  stage.addEventListener('pointerup', finish);
-  stage.addEventListener('pointercancel', finish);
-
-  reset.addEventListener('click', () => {
-    localStorage.removeItem('motya-room-layout');
-
-    s.items.forEach(i => {
-      const d = initial.find(x => x.id === i.id);
-      const pos = constrainItem(d, d.x, d.y);
-      i.x = pos.x;
-      i.y = pos.y;
-      render(i);
-    });
-
-    s.target = CAMERA_HOME;
-    select(null);
-    haptic(10);
-
-    reset.animate(
-      [{transform:'rotate(0)'}, {transform:'rotate(-310deg)'}],
-      {duration:460, easing:'cubic-bezier(.2,.8,.2,1)'}
-    );
-  });
-
-  arrange.addEventListener('click', () => {
-    stage.classList.toggle('arrange-mode');
-    arrange.classList.toggle('is-active');
-    mode.textContent = arrange.classList.contains('is-active')
-      ? 'Переставляй мебель по полу'
-      : 'Свайпай комнату';
-    hideHint();
-    haptic(7);
-  });
-
-  center.addEventListener('click', () => {
-    const vw = stage.clientWidth / s.scale;
-    s.target = clamp(1250 - vw / 2, 0, maxCam());
-    haptic(6);
-  });
-
-  function updateParallax() {
-    const drift = s.camera - CAMERA_HOME;
-
-    s.items.forEach(i => {
-      const depth01 = clamp((i.y - FT) / (FB - FT), 0, 1);
-      // Дальняя мебель движется чуть медленнее комнаты, ближняя - чуть быстрее.
-      const factor = lerp(.055, -.012, depth01);
-      const px = clamp(drift * factor, -28, 28);
-      i.el.style.setProperty('--parallax-x', `${px.toFixed(2)}px`);
-    });
-
-    floorGuide.style.setProperty('--guide-shift', `${clamp(drift * .018, -9, 9).toFixed(2)}px`);
-  }
-
-  function tick(now) {
-    const dt = Math.min(32, now - s.last || 16.67);
-    s.last = now;
-    const m = maxCam();
-
-    if (!s.pointer) {
-      s.target += s.vel * dt / 16.67;
-      s.vel *= Math.pow(.90, dt / 16.67);
-
-      if (Math.abs(s.vel) < .01) s.vel = 0;
-      if (s.target < 0) s.target += (0 - s.target) * .12;
-      if (s.target > m) s.target += (m - s.target) * .12;
-    }
-
-    s.camera +=
-      (clamp(s.target, -45 / s.scale, m + 45 / s.scale) - s.camera) *
-      (1 - Math.pow(.77, dt / 16.67));
-
-    scene.style.transform =
-      `translate3d(${-s.camera * s.scale}px,-50%,0) scale(${s.scale})`;
-
-    updateParallax();
-    requestAnimationFrame(tick);
-  }
-
-  window.addEventListener('resize', updateScale);
-  window.addEventListener('orientationchange', () => setTimeout(updateScale, 120));
-
-  updateScale();
-  requestAnimationFrame(tick);
-  setTimeout(hideHint, 6500);
-})();
+  s.p=null;
+}
+stage.addEventListener('pointerup',finish);
+stage.addEventListener('pointercancel',finish);
+document.getElementById('reset').onclick=()=>{localStorage.removeItem('motya-hq-layout-v2');s.items.forEach(i=>{const d=defs.find(d=>d.id===i.id),p=constrain(d,d.x,d.y);i.x=p.x;i.y=p.y;render(i)});s.target=CAM;choose(null);vibrate(10)};document.getElementById('arrange').onclick=e=>{const on=!stage.classList.contains('arrange-mode');stage.classList.toggle('arrange-mode',on);e.currentTarget.classList.toggle('active',on);mode.textContent=on?'Режим расстановки':'Свайпай комнату';hint.style.display='';hint.classList.remove('hide');hint.textContent=on?'✦ Тап - выбрать · потяни - переставить':'☝️ Проведи по комнате влево или вправо';setTimeout(hideHint,3200);if(!on)choose(null);s.vel=0;vibrate(5)};document.getElementById('windowBtn').onclick=()=>{const vw=stage.clientWidth/s.scale;s.target=clamp(1330-vw/2,0,maxCam());vibrate(6)};function parallax(){const drift=s.camera-CAM;s.items.forEach(i=>{const t=clamp((i.y-floor.backY)/(floor.frontY-floor.backY),0,1),f=lerp(.05,-.012,t);i.el.style.setProperty('--px',clamp(drift*f,-25,25).toFixed(1)+'px')})}function tick(now){const dt=Math.min(32,now-s.last||16.67);s.last=now;const m=maxCam();if(!s.p){s.target=clamp(s.target+s.vel*dt/16.67,0,m);s.vel*=Math.pow(.80,dt/16.67);if(Math.abs(s.vel)<.035)s.vel=0;s.camera+=(s.target-s.camera)*(1-Math.pow(.58,dt/16.67))}else if(s.p.kind!=='pan'){s.camera+=(s.target-s.camera)*(1-Math.pow(.58,dt/16.67))}scene.style.transform=`translate3d(${-s.camera*s.scale}px,-50%,0) scale(${s.scale})`;parallax();requestAnimationFrame(tick)}window.addEventListener('resize',updateScale);updateScale();requestAnimationFrame(tick);setTimeout(hideHint,6500)})();
