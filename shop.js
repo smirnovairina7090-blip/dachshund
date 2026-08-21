@@ -13,17 +13,21 @@
   const HOLD_SLOP=8;
 
   const catalog=[
-    {type:'armchair',name:'Кресло',src:'assets/armchair.webp',w:285,foot:86,y:690},
-    {type:'sofa',name:'Диван',src:'assets/sofa.webp',w:505,foot:150,y:665},
-    {type:'bookcase',name:'Книжный шкаф',src:'assets/bookcase.webp',w:405,foot:112,y:635},
-    {type:'stove',name:'Камин',src:'assets/stove.webp',w:285,foot:82,y:625},
-    {type:'table',name:'Чайный столик',src:'assets/table.webp',w:225,foot:70,pad:25,y:730},
-    {type:'nightstand',name:'Тумбочка',src:'assets/nightstand.webp',w:175,foot:58,pad:6,y:700},
-    {type:'garden',name:'Тумба с растениями',src:'assets/garden.webp',w:400,foot:105,y:610},
-    {type:'rug',name:'Джутовый ковёр',src:'assets/rug.webp',w:545,foot:170,flat:true,y:760},
-    {type:'round_bed',name:'Круглая лежанка',src:'assets/round_bed.webp',w:220,foot:76,pad:4,y:710},
-    {type:'bed_wicker',name:'Плетёная лежанка',src:'assets/bed_wicker.webp',w:235,foot:82,y:710},
-    {type:'bed_house',name:'Домик-лежанка',src:'assets/bed_house.webp',w:245,foot:86,y:705}
+    {type:'armchair',category:'furniture',name:'Кресло',src:'assets/armchair.webp',w:285,foot:86,y:690},
+    {type:'sofa',category:'furniture',name:'Диван',src:'assets/sofa.webp',w:505,foot:150,y:665},
+    {type:'bookcase',category:'furniture',name:'Книжный шкаф',src:'assets/bookcase.webp',w:405,foot:112,y:635},
+    {type:'stove',category:'furniture',name:'Камин',src:'assets/stove.webp',w:285,foot:82,y:625},
+    {type:'table',category:'furniture',name:'Чайный столик',src:'assets/table.webp',w:225,foot:70,pad:25,y:730},
+    {type:'nightstand',category:'furniture',name:'Тумбочка',src:'assets/nightstand.webp',w:175,foot:58,pad:6,y:700},
+    {type:'garden',category:'furniture',name:'Тумба с растениями',src:'assets/garden.webp',w:400,foot:105,y:610},
+    {type:'rug',category:'furniture',name:'Джутовый ковёр',src:'assets/rug.webp',w:545,foot:170,flat:true,y:760},
+    {type:'round_bed',category:'furniture',name:'Круглая лежанка',src:'assets/round_bed.webp',w:220,foot:76,pad:4,y:710},
+    {type:'bed_wicker',category:'furniture',name:'Плетёная лежанка',src:'assets/bed_wicker.webp',w:235,foot:82,y:710},
+    {type:'bed_house',category:'furniture',name:'Домик-лежанка',src:'assets/bed_house.webp',w:245,foot:86,y:705},
+
+    {type:'plant_monstera',category:'plants',name:'Монстера',src:'assets/plant.webp',w:180,foot:52,pad:13,y:675,ambient:true},
+    {type:'plant_leafy',category:'plants',name:'Пышное растение',src:'assets/plant_alt1.webp',w:180,foot:52,pad:13,y:675,ambient:true},
+    {type:'plant_trailing',category:'plants',name:'Свисающее растение',src:'assets/plant_alt2.webp',w:180,foot:52,pad:13,y:675,ambient:true}
   ];
 
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -35,6 +39,7 @@
   if(!Array.isArray(stored))stored=[];
   const added=[];
   let deleteTarget=null;
+  let activeCategory='furniture';
 
   function sceneMetrics(){
     const r=scene.getBoundingClientRect();
@@ -101,7 +106,7 @@
     const def=itemByType(data.type);if(!def)return null;
     const pos=constrain(def,data.x??visibleWorldCenter(),data.y??def.y);
     const el=document.createElement('div');
-    el.className='item shop-added'+(def.flat?' flat':'');
+    el.className='item shop-added'+(def.flat?' flat':'')+(def.ambient?' ambient':'')+(def.category==='plants'?' shop-plant':'');
     el.dataset.shopId=data.id;
     const img=document.createElement('img');img.src=def.src;img.alt='';img.draggable=false;
     const del=document.createElement('button');
@@ -122,21 +127,50 @@
   stored.forEach(x=>createItem(x,false));
 
   const shopBtn=document.createElement('button');
-  shopBtn.id='shopBtn';shopBtn.className='shop-float';shopBtn.type='button';shopBtn.setAttribute('aria-label','Магазин мебели');shopBtn.setAttribute('aria-expanded','false');
+  shopBtn.id='shopBtn';shopBtn.className='shop-float';shopBtn.type='button';shopBtn.setAttribute('aria-label','Магазин мебели и растений');shopBtn.setAttribute('aria-expanded','false');
   shopBtn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h16l-1.3 10.2H5.3L4 7.5Z"/><path d="M8 7.5a4 4 0 0 1 8 0"/><path d="M9 11v1M15 11v1"/></svg><span>Магазин</span>';
   stage.appendChild(shopBtn);
 
   const backdrop=document.createElement('div');backdrop.className='shop-backdrop';stage.appendChild(backdrop);
   const panel=document.createElement('section');panel.className='shop-panel';panel.setAttribute('aria-hidden','true');
-  panel.innerHTML='<div class="shop-handle"></div><div class="shop-head"><div><small>Мебель для комнаты</small><b>Магазин</b><p>Пока всё бесплатно</p></div><button class="shop-close" type="button" aria-label="Закрыть">×</button></div><div class="shop-grid"></div>';
+  panel.innerHTML=`
+    <div class="shop-handle"></div>
+    <div class="shop-head">
+      <div><small>Каталог для комнаты</small><b>Магазин</b><p>Пока всё бесплатно</p></div>
+      <button class="shop-close" type="button" aria-label="Закрыть">×</button>
+    </div>
+    <div class="shop-tabs" role="tablist" aria-label="Категории магазина">
+      <button type="button" class="shop-tab active" data-category="furniture" role="tab" aria-selected="true">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.2 11.5v-1.2a3.4 3.4 0 0 1 3.4-3.4h4.8a3.4 3.4 0 0 1 3.4 3.4v1.2"/><path d="M5 11.5a1.8 1.8 0 0 0-1.8 1.8v3.4h17.6v-3.4a1.8 1.8 0 0 0-1.8-1.8"/></svg>
+        <span>Мебель</span>
+      </button>
+      <button type="button" class="shop-tab" data-category="plants" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20v-8"/><path d="M12 13c-4.1 0-6.5-2.4-6.5-6.8 4.1 0 6.5 2.3 6.5 6.8Z"/><path d="M12 11c3.8 0 6.3-2 6.5-6.2-3.9 0-6.3 2.1-6.5 6.2Z"/><path d="M8.5 20h7"/></svg>
+        <span>Растения</span>
+      </button>
+    </div>
+    <div class="shop-grid"></div>`;
   stage.appendChild(panel);
   const grid=panel.querySelector('.shop-grid');
+  const tabs=[...panel.querySelectorAll('.shop-tab')];
 
-  catalog.forEach(def=>{
-    const card=document.createElement('button');card.type='button';card.className='shop-card';
-    card.innerHTML=`<span class="shop-thumb"><img src="${def.src}" alt="${def.name}"></span><span class="shop-name">${def.name}</span><span class="shop-price">Бесплатно</span>`;
-    card.addEventListener('click',()=>buy(def.type));grid.appendChild(card);
-  });
+  function renderCatalog(category){
+    activeCategory=category;
+    tabs.forEach(tab=>{
+      const active=tab.dataset.category===category;
+      tab.classList.toggle('active',active);
+      tab.setAttribute('aria-selected',String(active));
+    });
+    grid.replaceChildren();
+    catalog.filter(def=>def.category===category).forEach(def=>{
+      const card=document.createElement('button');card.type='button';card.className='shop-card'+(def.category==='plants'?' plant-card':'');
+      card.innerHTML=`<span class="shop-thumb"><img src="${def.src}" alt="${def.name}"></span><span class="shop-name">${def.name}</span><span class="shop-price">Бесплатно</span>`;
+      card.addEventListener('click',()=>buy(def.type));grid.appendChild(card);
+    });
+    grid.scrollTop=0;
+  }
+  tabs.forEach(tab=>tab.addEventListener('click',()=>renderCatalog(tab.dataset.category)));
+  renderCatalog(activeCategory);
 
   function openShop(){
     hideDelete();
