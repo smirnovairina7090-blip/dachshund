@@ -1,0 +1,80 @@
+/* Final mobile UI corrections: clean shop tabs + no floor grid. */
+
+/* Remove all decorative grid/sweep layers from the floor in arrange mode. */
+.floor-guide::before,
+.floor-guide::after{
+  content:none!important;
+  display:none!important;
+  animation:none!important;
+  background:none!important;
+}
+.polish-mode-flash{display:none!important}
+
+/* Replace the broken sliding tab treatment with two simple, equal buttons. */
+.shop-tabs{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  align-items:center!important;
+  gap:6px!important;
+  height:auto!important;
+  min-height:44px!important;
+  margin:0 1px 8px!important;
+  padding:4px!important;
+  overflow:visible!important;
+  isolation:auto!important;
+  border-radius:16px!important;
+  background:rgba(104,79,57,.055)!important;
+  border:1px solid rgba(102,74,49,.08)!important;
+}
+.shop-tab-indicator{display:none!important}
+.shop-tab{
+  position:relative!important;
+  z-index:1!important;
+  width:100%!important;
+  min-width:0!important;
+  height:36px!important;
+  padding:0 10px!important;
+  border:1px solid transparent!important;
+  border-radius:12px!important;
+  background:rgba(255,255,255,.38)!important;
+  color:rgba(86,63,46,.62)!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:7px!important;
+  overflow:hidden!important;
+  font-size:10px!important;
+  font-weight:850!important;
+  line-height:1!important;
+  box-shadow:none!important;
+  transition:transform .14s ease,background .18s ease,color .18s ease,border-color .18s ease,box-shadow .18s ease!important;
+}
+.shop-tab span{
+  display:block!important;
+  min-width:0!important;
+  white-space:nowrap!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+}
+.shop-tab svg{
+  flex:0 0 auto!important;
+  width:17px!important;
+  height:17px!important;
+  fill:none!important;
+  stroke:currentColor!important;
+  stroke-width:1.8!important;
+}
+.shop-tab.active{
+  background:#f1f5e7!important;
+  color:#5f7338!important;
+  border-color:rgba(111,132,69,.17)!important;
+  box-shadow:0 3px 9px rgba(65,46,28,.07),inset 0 1px 0 rgba(255,255,255,.92)!important;
+}
+.shop-tab:active{transform:scale(.97)!important}
+.shop-tab[data-category="plants"].has-new::after{display:none!important;content:none!important}
+
+@media(max-width:360px){
+  .shop-tabs{gap:5px!important;padding:3px!important;min-height:42px!important}
+  .shop-tab{height:34px!important;padding:0 7px!important;font-size:9px!important;gap:5px!important}
+  .shop-tab svg{width:15px!important;height:15px!important}
+}
