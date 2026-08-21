@@ -1,7 +1,7 @@
 (()=>{
   const W=1916,H=821,CAM=720,MIN_ZOOM=.65,MAX_ZOOM=1.15,LONG_PRESS=520,MOVE_SLOP=8;
   const $=id=>document.getElementById(id);
-  const stage=$('stage'),scene=$('scene'),objects=$('objects'),floorGuide=$('floorGuide'),hint=$('hint'),modeLabel=$('mode'),viewBtn=$('viewMode'),arrangeBtn=$('arrange'),windowBtn=$('windowBtn');
+  const stage=$('stage'),scene=$('scene'),objects=$('objects'),floorGuide=$('floorGuide'),hint=$('hint'),modeLabel=$('mode'),viewBtn=$('viewMode'),arrangeBtn=$('arrange');
   const variantPanel=$('variantPanel'),variantBackdrop=$('variantBackdrop'),variantTitle=$('variantTitle'),variantOptions=$('variantOptions'),variantClose=$('variantClose');
 
   const zoomBadge=document.createElement('div');
@@ -115,7 +115,7 @@
   stage.addEventListener('pointerup',e=>s.mode==='view'?finishView(e):finishArrange(e));stage.addEventListener('pointercancel',e=>s.mode==='view'?finishView(e):finishArrange(e));
 
   $('reset').onclick=()=>{localStorage.removeItem('motya-hq-layout-v5');s.items.forEach(i=>{const d=defs.find(d=>d.id===i.id),p=constrain(d,d.x,d.y);i.x=p.x;i.y=p.y;if(i.family){i.variant=d.variant;i.src=familyVariant(i.family,i.variant).src;i.el.querySelector('img').src=i.src}render(i)});resetZoom(false);s.target=CAM;s.camera=clamp(s.camera,0,maxCam());vibrate(8);showHint('Мебель и варианты сброшены',1600)};
-  viewBtn.onclick=()=>{if(s.mode==='view'&&Math.abs(s.zoom-1)>.01)resetZoom(true);else setMode('view')};arrangeBtn.onclick=()=>setMode('arrange');windowBtn.onclick=()=>{if(s.mode!=='view')setMode('view',false);const vw=stage.clientWidth/s.scale;s.target=clamp(1330-vw/2,0,maxCam());vibrate(5);showHint('Камера плавно переходит к окну',1300)};
+  viewBtn.onclick=()=>{if(s.mode==='view'&&Math.abs(s.zoom-1)>.01)resetZoom(true);else setMode('view')};arrangeBtn.onclick=()=>setMode('arrange');
 
   function parallax(){const drift=s.camera-CAM;s.items.forEach(i=>{const t=clamp((i.y-floor.top)/(floor.bottom-floor.top),0,1),f=lerp(.05,-.012,t);i.el.style.setProperty('--px',clamp(drift*f,-25,25).toFixed(1)+'px')})}
   function tick(now){const dt=Math.min(32,now-s.last||16.67);s.last=now;const m=maxCam();if(s.mode==='view'&&!s.p&&!s.pinch){s.target=clamp(s.target+s.vel*dt/16.67,0,m);s.vel*=Math.pow(.80,dt/16.67);if(Math.abs(s.vel)<.035)s.vel=0;s.camera+=(s.target-s.camera)*(1-Math.pow(.58,dt/16.67))}else if(s.mode==='view'&&s.p?.kind!=='pan'&&!s.pinch)s.camera+=(s.target-s.camera)*(1-Math.pow(.58,dt/16.67));scene.style.transform=`translate3d(${-s.camera*s.scale}px,-50%,0) scale(${s.scale})`;parallax();requestAnimationFrame(tick)}
