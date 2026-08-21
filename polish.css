@@ -1,66 +1,89 @@
-/* Premium visual polish - presentation only. No camera or placement geometry changes. */
-.scene{transition:filter .34s ease}
-.stage.shop-open .scene{filter:saturate(.94) contrast(1.01) brightness(.84) blur(1.15px)}
-.stage.shop-open .vignette{opacity:.82}
-.shop-backdrop{background:rgba(37,23,15,.28)!important;backdrop-filter:blur(3.5px)!important;-webkit-backdrop-filter:blur(3.5px)!important;transition:opacity .28s ease!important}
-.shop-panel{transform:translate(-50%,34px) scale(.965)!important;transition:opacity .25s ease,transform .38s cubic-bezier(.16,1,.3,1)!important;box-shadow:0 26px 64px rgba(47,27,14,.30),inset 0 1px 0 rgba(255,255,255,.86)!important}
-.shop-panel.open{transform:translate(-50%,0) scale(1)!important}
+/* Visible UI polish without changing camera, floor bounds or furniture geometry. */
+:root,html,body,.app,.stage{color-scheme:only light!important}
+.shop-panel,.shop-card,.shop-tabs,.shop-tab,.shop-float,.reset-float,.dock,.delete-confirm,.variant-panel{color-scheme:only light!important}
 
-/* The two top actions read as one control family. */
-.reset-float,.shop-float{top:max(12px,env(safe-area-inset-top))!important;height:40px!important;border:1px solid rgba(255,255,255,.62)!important;background:rgba(255,249,238,.82)!important;color:#68503c!important;box-shadow:0 8px 22px rgba(55,31,16,.12),inset 0 1px 0 rgba(255,255,255,.78)!important;backdrop-filter:blur(18px) saturate(1.06)!important;-webkit-backdrop-filter:blur(18px) saturate(1.06)!important}
+/* Shop: keep the room readable. No muddy blur. */
+.scene{transition:filter .24s ease}
+.stage.shop-open .scene{filter:saturate(.98) contrast(1.005) brightness(.96)!important}
+.stage.shop-open .vignette{opacity:.94!important}
+.shop-backdrop{background:rgba(49,31,20,.12)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;transition:opacity .2s ease!important}
+.shop-panel{width:min(370px,calc(100% - 20px))!important;max-height:min(64vh,525px)!important;padding:7px 9px 10px!important;border:1px solid rgba(255,255,255,.84)!important;border-radius:25px!important;background:rgba(255,250,241,.985)!important;color:#533823!important;box-shadow:0 18px 46px rgba(47,27,14,.22),inset 0 1px 0 rgba(255,255,255,.95)!important;backdrop-filter:blur(12px) saturate(1.03)!important;-webkit-backdrop-filter:blur(12px) saturate(1.03)!important;transform:translate(-50%,20px) scale(.985)!important;transition:opacity .2s ease,transform .28s cubic-bezier(.16,1,.3,1)!important}
+.shop-panel.open{transform:translate(-50%,0) scale(1)!important}
+.shop-handle{margin-bottom:5px!important;background:rgba(89,64,44,.14)!important}
+.shop-head{padding:0 2px 6px 5px!important}
+.shop-head small{font-size:8px!important;color:rgba(79,55,38,.46)!important}
+.shop-head b{font-size:17px!important;color:#513622!important}
+.shop-head p{font-size:9px!important;margin-top:2px!important;color:#74834b!important}
+.shop-close{width:32px!important;height:32px!important;border-radius:13px!important;background:rgba(107,126,70,.08)!important;color:#624b38!important}
+
+/* Compact segmented tabs with a real sliding indicator. */
+.shop-tabs{position:relative;isolation:isolate;overflow:hidden;height:40px!important;margin:0 1px 7px!important;padding:3px!important;gap:4px!important;border-radius:15px!important;background:rgba(100,76,55,.05)!important;border:1px solid rgba(102,74,49,.07)!important}
+.shop-tab{position:relative;z-index:2;height:32px!important;border-radius:12px!important;background:transparent!important;color:rgba(88,65,47,.58)!important;font-size:9px!important;gap:6px!important;box-shadow:none!important}
+.shop-tab svg{width:16px!important;height:16px!important}
+.shop-tab.active{color:#61743c!important;background:transparent!important;box-shadow:none!important}
+.shop-tab-indicator{position:absolute;z-index:1;top:3px;bottom:3px;left:3px;width:calc((100% - 10px)/2);border-radius:12px;background:#fffdf8;border:1px solid rgba(112,132,74,.12);box-shadow:0 3px 10px rgba(62,42,24,.07),inset 0 1px 0 rgba(255,255,255,.95);transform:translateX(0);transition:transform .3s cubic-bezier(.16,1,.3,1)}
+.shop-tab[data-category="plants"].has-new::after{content:"";position:absolute;right:13px;top:6px;width:5px;height:5px;border-radius:50%;background:#819552;box-shadow:0 0 0 3px rgba(129,149,82,.12);animation:polishNewDot 1.9s ease-in-out infinite}
+@keyframes polishNewDot{0%,100%{transform:scale(.88);opacity:.68}50%{transform:scale(1.12);opacity:1}}
+
+/* Smaller, lighter cards. */
+.shop-grid{gap:6px!important;padding:1px 1px 3px!important}
+.shop-card{overflow:hidden;will-change:transform;height:139px!important;padding:6px 6px 7px!important;border:1px solid rgba(98,70,48,.09)!important;border-radius:17px!important;background:rgba(255,255,255,.78)!important;color:#553b28!important;box-shadow:0 3px 10px rgba(68,43,25,.035),inset 0 1px 0 rgba(255,255,255,.9)!important;transition:transform .14s ease,background .16s ease,border-color .16s ease,box-shadow .16s ease!important}
+.shop-card:active,.shop-card.purchasing{transform:scale(.96)!important;background:#f1f5e6!important;border-color:rgba(112,132,74,.22)!important;box-shadow:0 5px 15px rgba(70,47,29,.08),inset 0 0 0 1px rgba(112,132,74,.06)!important}
+.shop-thumb{height:88px!important}
+.shop-thumb img{max-height:84px!important;max-width:91%!important;filter:drop-shadow(0 5px 4px rgba(62,36,18,.14))!important}
+.plant-card{background:linear-gradient(180deg,#fffdf9,#f5f8ed)!important}
+.plant-card .shop-thumb img{max-height:86px!important;max-width:76%!important}
+.shop-name{font-size:9px!important;color:#553b28!important}
+.shop-price{margin-top:3px!important;padding:2px 6px!important;font-size:7px!important;background:rgba(112,132,74,.10)!important;color:#65773f!important}
+.shop-card.polish-card-in{animation:polishCardIn .28s cubic-bezier(.16,1,.3,1) both}
+@keyframes polishCardIn{from{opacity:0;transform:translateY(7px) scale(.975)}to{opacity:1;transform:none}}
+
+/* Top controls stay one clean family. */
+.reset-float,.shop-float{top:max(12px,env(safe-area-inset-top))!important;height:40px!important;border:1px solid rgba(255,255,255,.68)!important;background:rgba(255,250,241,.88)!important;color:#68503c!important;box-shadow:0 7px 20px rgba(55,31,16,.11),inset 0 1px 0 rgba(255,255,255,.86)!important;backdrop-filter:blur(16px) saturate(1.04)!important;-webkit-backdrop-filter:blur(16px) saturate(1.04)!important}
 .reset-float{width:40px!important;border-radius:20px!important;right:118px!important}
 .shop-float{right:12px!important;border-radius:20px!important}
 .reset-float svg,.shop-float svg{width:18px!important;height:18px!important;fill:none;stroke:currentColor;stroke-width:1.75!important;stroke-linecap:round;stroke-linejoin:round}
-.reset-float:active,.shop-float:active{transform:scale(.95)!important;background:rgba(255,249,238,.96)!important}
+.reset-float:active,.shop-float:active{transform:scale(.94)!important;background:#fffdf8!important}
 
-/* Soft object selection: visible, but quieter than drag/delete states. */
-.stage.arrange-mode .item.polish-selected:not(.dragging):not(.holding):not(.picker-target):not(.global-delete-selected):not(.delete-ready){--lift:-3px!important;filter:drop-shadow(0 12px 9px rgba(60,31,14,.24)) drop-shadow(0 0 5px rgba(228,237,191,.72))!important}
-.stage.arrange-mode .item.polish-selected:not(.dragging)::before{opacity:.54;filter:blur(6px);transform:translateX(-50%) scaleX(.97)}
+/* Arrange mode now visibly changes the floor, but does not magnet/snap anything. */
+.floor-guide::after{content:"";position:absolute;inset:1px;border-radius:inherit;pointer-events:none;background-image:radial-gradient(circle,rgba(98,91,55,.33) 1.15px,transparent 1.45px);background-size:30px 30px;mask-image:linear-gradient(to bottom,transparent 0%,#000 14%,#000 88%,transparent 100%);-webkit-mask-image:linear-gradient(to bottom,transparent 0%,#000 14%,#000 88%,transparent 100%);opacity:0;transition:opacity .25s ease}
+.floor-guide::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(105deg,transparent 25%,rgba(255,241,178,.22) 48%,transparent 68%);background-size:220% 100%;opacity:0}
+.stage.arrange-mode .floor-guide::after{opacity:.44;animation:polishFloorPoints 4.8s ease-in-out infinite}
+.stage.arrange-mode .floor-guide::before{opacity:.7;animation:polishFloorSweep 5.6s ease-in-out infinite}
+@keyframes polishFloorPoints{0%,100%{transform:translateY(0);opacity:.38}50%{transform:translateY(-1px);opacity:.5}}
+@keyframes polishFloorSweep{0%,18%{background-position:145% 0;opacity:0}40%{opacity:.65}72%,100%{background-position:-70% 0;opacity:0}}
+.polish-mode-flash{position:absolute;z-index:46;left:2%;right:2%;top:64%;bottom:2%;border-radius:24px;pointer-events:none;background:radial-gradient(ellipse at 50% 18%,rgba(255,240,169,.28),rgba(255,232,155,.07) 46%,transparent 72%);opacity:0;animation:polishModeFlash .7s cubic-bezier(.16,1,.3,1)}
+@keyframes polishModeFlash{0%{opacity:0;transform:scale(.97)}38%{opacity:1}100%{opacity:0;transform:scale(1.02)}}
 
-/* A barely-there placement texture. The floor geometry itself stays untouched. */
-.floor-guide::after{content:"";position:absolute;inset:2px;border-radius:inherit;pointer-events:none;background-image:radial-gradient(circle,rgba(96,91,57,.22) 1px,transparent 1.25px);background-size:32px 32px;mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.72) 18%,rgba(0,0,0,.62) 78%,transparent 100%);-webkit-mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.72) 18%,rgba(0,0,0,.62) 78%,transparent 100%);opacity:0;transition:opacity .28s ease}
-.stage.arrange-mode .floor-guide::after{opacity:.24;animation:polishFloorPoints 5.5s ease-in-out infinite}
-@keyframes polishFloorPoints{0%,100%{transform:translateY(0);opacity:.20}50%{transform:translateY(-1px);opacity:.28}}
+/* Selection is now obvious enough to feel tactile. */
+.stage.arrange-mode .item.polish-selected:not(.dragging):not(.holding):not(.picker-target):not(.global-delete-selected):not(.delete-ready){--lift:-5px!important;filter:drop-shadow(0 15px 10px rgba(60,31,14,.28)) drop-shadow(0 0 9px rgba(232,242,189,.96))!important}
+.stage.arrange-mode .item.polish-selected:not(.dragging)::before{opacity:.45;filter:blur(7px);transform:translateX(-50%) scaleX(1.04)}
+.stage.arrange-mode .item.dragging{filter:drop-shadow(0 22px 14px rgba(58,29,12,.38)) drop-shadow(0 0 11px rgba(255,244,181,.98))!important}
 
-/* Sliding segmented control in the shop. */
-.shop-tabs{position:relative;isolation:isolate;overflow:hidden}
-.shop-tab{position:relative;z-index:2}
-.shop-tab.active{background:transparent!important;box-shadow:none!important}
-.shop-tab-indicator{position:absolute;z-index:1;top:4px;bottom:4px;left:4px;width:calc((100% - 14px)/2);border-radius:14px;background:rgba(255,255,255,.76);border:1px solid rgba(112,132,74,.11);box-shadow:0 4px 12px rgba(62,42,24,.08),inset 0 1px 0 rgba(255,255,255,.84);transform:translateX(0);transition:transform .34s cubic-bezier(.16,1,.3,1)}
-.shop-tab[data-category="plants"].has-new::after{content:"";position:absolute;right:16px;top:9px;width:6px;height:6px;border-radius:50%;background:#819552;box-shadow:0 0 0 3px rgba(129,149,82,.12);animation:polishNewDot 2.2s ease-in-out infinite}
-@keyframes polishNewDot{0%,100%{transform:scale(.9);opacity:.74}50%{transform:scale(1.08);opacity:1}}
+/* Purchase flight and landing. */
+.purchase-ghost{position:fixed;z-index:9000;pointer-events:none;object-fit:contain;filter:drop-shadow(0 11px 9px rgba(55,31,16,.24));transform-origin:center bottom;will-change:transform,opacity,filter}
+.item.shop-new img{animation:polishItemLand .62s cubic-bezier(.16,1,.3,1)!important;transform-origin:center bottom}
+.item.shop-new{filter:drop-shadow(0 0 14px rgba(246,231,157,.95))!important}
+@keyframes polishItemLand{0%{transform:translateY(-15px) scale(.82);filter:brightness(1.22);opacity:.25}48%{transform:translateY(2px) scale(1.055);filter:brightness(1.09);opacity:1}72%{transform:translateY(-2px) scale(.985)}100%{transform:none;filter:brightness(1);opacity:1}}
 
-/* Shop cards feel tactile without becoming noisy. */
-.shop-card{overflow:hidden;will-change:transform}
-.shop-card::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 34%,rgba(255,255,255,.52),transparent 56%);opacity:0;transition:opacity .18s ease}
-.shop-card:active::after,.shop-card.purchasing::after{opacity:1}
-.shop-card.purchasing{transform:scale(.955)!important;background:rgba(237,243,221,.82)!important;border-color:rgba(112,132,74,.24)!important}
-
-/* The visual copy that flies out of the selected card. */
-.purchase-ghost{position:fixed;z-index:9000;pointer-events:none;object-fit:contain;filter:drop-shadow(0 10px 9px rgba(55,31,16,.20));transform-origin:center bottom;will-change:transform,opacity,filter}
-.item.shop-new img{animation:polishItemLand .56s cubic-bezier(.16,1,.3,1)!important;transform-origin:center bottom}
-@keyframes polishItemLand{0%{transform:translateY(-7px) scale(.92);filter:brightness(1.12)}55%{transform:translateY(1px) scale(1.025);filter:brightness(1.05)}100%{transform:none;filter:brightness(1)}}
-
-/* Variant change gets a quiet halo while the existing sprite crossfade runs. */
-.morph-halo{position:fixed;z-index:6050;pointer-events:none;border-radius:40%;border:1px solid rgba(231,240,197,.58);box-shadow:0 0 22px rgba(227,239,183,.28),inset 0 0 18px rgba(255,250,218,.14);will-change:transform,opacity}
+/* Variant morph is visible around the selected bed/plant. */
+.morph-halo{position:fixed;z-index:6050;pointer-events:none;border-radius:40%;border:2px solid rgba(232,242,192,.7);box-shadow:0 0 30px rgba(228,241,181,.42),inset 0 0 20px rgba(255,250,218,.18);will-change:transform,opacity}
 .variant-option{overflow:hidden}
-.variant-option::before{content:"";position:absolute;inset:0;border-radius:inherit;background:radial-gradient(circle at 50% 35%,rgba(255,255,255,.55),transparent 58%);opacity:0;pointer-events:none;transition:opacity .18s ease}
-.variant-option:active::before{opacity:1}
+.variant-option:active{transform:scale(.96)}
 
-/* Extra dissolve layer, independent from the persistence/delete logic. */
+/* Deletion dissolves instead of simply vanishing. */
 .delete-ghost{position:fixed;z-index:9100;pointer-events:none;object-fit:contain;transform-origin:center bottom;filter:drop-shadow(0 8px 7px rgba(54,29,13,.16));will-change:transform,opacity,filter}
-.delete-spark{position:fixed;z-index:9095;width:4px;height:4px;border-radius:50%;pointer-events:none;background:rgba(245,232,188,.82);box-shadow:0 0 7px rgba(239,219,153,.42);will-change:transform,opacity}
+.delete-spark{position:fixed;z-index:9095;width:5px;height:5px;border-radius:50%;pointer-events:none;background:rgba(248,229,169,.92);box-shadow:0 0 8px rgba(239,219,153,.58);will-change:transform,opacity}
 
-/* Subtle moving floor light - intentionally weaker than the existing sunbeams. */
-.polish-light{position:absolute;z-index:12;left:930px;top:474px;width:690px;height:235px;border-radius:50%;pointer-events:none;background:radial-gradient(ellipse at center,rgba(255,239,174,.30),rgba(255,227,145,.10) 42%,transparent 72%);mix-blend-mode:screen;filter:blur(20px);opacity:.085;transform:rotate(-5deg);animation:polishLivingLight 17s ease-in-out infinite alternate}
-@keyframes polishLivingLight{0%{transform:translate3d(-24px,2px,0) rotate(-6deg) scale(.96);opacity:.065}48%{opacity:.095}100%{transform:translate3d(25px,-5px,0) rotate(-3deg) scale(1.04);opacity:.11}}
+/* Living light is visible in the room but stays behind furniture. */
+.polish-light{position:absolute;z-index:12;left:900px;top:470px;width:730px;height:245px;border-radius:50%;pointer-events:none;background:radial-gradient(ellipse at center,rgba(255,240,175,.38),rgba(255,226,142,.12) 43%,transparent 72%);mix-blend-mode:screen;filter:blur(18px);opacity:.14;transform:rotate(-5deg);animation:polishLivingLight 13s ease-in-out infinite alternate}
+@keyframes polishLivingLight{0%{transform:translate3d(-30px,2px,0) rotate(-6deg) scale(.95);opacity:.11}48%{opacity:.18}100%{transform:translate3d(30px,-7px,0) rotate(-3deg) scale(1.05);opacity:.21}}
 
-/* Confirmation has a softer entrance and premium depth. */
-.delete-confirm{transform:translate(-50%,-45%) scale(.93)!important;transition:opacity .22s ease,transform .34s cubic-bezier(.16,1,.3,1)!important}
+/* Confirmation keeps the nice soft entrance. */
+.delete-confirm{background:rgba(255,250,241,.985)!important;color:#543826!important;transform:translate(-50%,-45%) scale(.93)!important;transition:opacity .22s ease,transform .32s cubic-bezier(.16,1,.3,1)!important}
 .delete-confirm.open{transform:translate(-50%,-50%) scale(1)!important}
-.delete-confirm-icon{overflow:hidden}
-.delete-confirm.open .delete-confirm-thumb{animation:polishConfirmThumb .42s cubic-bezier(.16,1,.3,1)}
-@keyframes polishConfirmThumb{0%{transform:translateY(5px) scale(.9);opacity:.4}100%{transform:none;opacity:1}}
+.delete-confirm.open .delete-confirm-thumb{animation:polishConfirmThumb .4s cubic-bezier(.16,1,.3,1)}
+@keyframes polishConfirmThumb{0%{transform:translateY(7px) scale(.86);opacity:.25}100%{transform:none;opacity:1}}
 
-@media(max-width:360px){.reset-float{right:110px!important}.shop-tab[data-category="plants"].has-new::after{right:11px}}
-@media(prefers-reduced-motion:reduce){.polish-light,.floor-guide::after,.shop-tab[data-category="plants"].has-new::after,.item.shop-new img,.delete-confirm.open .delete-confirm-thumb{animation:none!important}.shop-panel,.shop-tab-indicator,.scene{transition-duration:.01ms!important}}
+@media(max-width:360px){.reset-float{right:110px!important}.shop-panel{width:calc(100% - 14px)!important}.shop-card{height:134px!important}.shop-thumb{height:83px!important}.shop-tab[data-category="plants"].has-new::after{right:9px}}
+@media(prefers-reduced-motion:reduce){.polish-light,.floor-guide::after,.floor-guide::before,.shop-tab[data-category="plants"].has-new::after,.item.shop-new img,.delete-confirm.open .delete-confirm-thumb{animation:none!important}.shop-panel,.shop-tab-indicator,.scene{transition-duration:.01ms!important}}
