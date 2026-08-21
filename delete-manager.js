@@ -5,13 +5,19 @@
 
   const LONG_PRESS=485;
   const MOVE_SLOP=8;
-  const BASE_DELETE_KEY='motya-base-deleted-v1';
+  const LEGACY_BASE_DELETE_KEY='motya-base-deleted-v1';
+  const BASE_DELETE_KEY='motya-base-deleted-v2';
   const baseNames={
     garden:'Тумба с растениями',stove:'Камин',armchair:'Кресло',sofa:'Диван',rug:'Джутовый ковёр',table:'Чайный столик',bed:'Лежанка',bookcase:'Книжный шкаф',plant:'Растение'
   };
   const srcNames={
     'armchair.webp':'Кресло','sofa.webp':'Диван','bookcase.webp':'Книжный шкаф','stove.webp':'Камин','table.webp':'Чайный столик','nightstand.webp':'Тумбочка','garden.webp':'Тумба с растениями','rug.webp':'Джутовый ковёр','round_bed.webp':'Круглая лежанка','bed_wicker.webp':'Плетёная лежанка','bed_house.webp':'Домик-лежанка','plant.webp':'Растение','plant_alt1.webp':'Растение','plant_alt2.webp':'Растение'
   };
+
+  // Do not carry over the broken deletion state from the previous build.
+  // The v2 key starts with the full default room once, then stores future
+  // confirmed deletions normally.
+  try{localStorage.removeItem(LEGACY_BASE_DELETE_KEY)}catch{}
 
   let deletedBase=[];
   try{deletedBase=JSON.parse(localStorage.getItem(BASE_DELETE_KEY)||'[]')}catch{deletedBase=[]}
@@ -155,8 +161,8 @@
     const p={id:e.pointerId,el,sx:e.clientX,sy:e.clientY,x:e.clientX,y:e.clientY,timer:0};
     p.timer=setTimeout(()=>{
       if(press!==p||!el.isConnected)return;
-      // For plants and beds, keep their native long-press alive so the
-      // variant picker opens too. Other furniture still gets delete-only.
+      // Plants and beds keep the original long-press so their variant panel
+      // opens. The delete chip appears at the same time in a separate UI layer.
       if(!isCustomizable(el))cancelNativeLongPress(p.id,p.x,p.y);
       press=null;
       selectItem(el);
@@ -173,8 +179,6 @@
   stage.addEventListener('pointercancel',e=>{if(e.__motyaDeleteSynthetic)return;if(press?.id===e.pointerId)cancelPress()},true);
   stage.addEventListener('contextmenu',e=>{if(e.target.closest?.('.item'))e.preventDefault()});
 
-  // Keep the floating delete chip attached to the selected object while UI
-  // layers animate in or the viewport changes.
   function followSelection(){positionChip();requestAnimationFrame(followSelection)}
   requestAnimationFrame(followSelection);
 
@@ -182,7 +186,10 @@
   function objectsQuery(id){return stage.querySelector(`.item[data-id="${id}"]`)}
 
   resetBtn.addEventListener('click',()=>{
-    deletedBase=[];localStorage.removeItem(BASE_DELETE_KEY);clearSelection();closeConfirm(false);
+    deletedBase=[];
+    localStorage.removeItem(BASE_DELETE_KEY);
+    localStorage.removeItem(LEGACY_BASE_DELETE_KEY);
+    clearSelection();closeConfirm(false);
     setTimeout(()=>location.reload(),80);
   });
 })();
