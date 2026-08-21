@@ -1,6 +1,8 @@
 (()=>{
   const stage=document.getElementById('stage');
   const resetBtn=document.getElementById('reset');
+  const variantPanel=document.getElementById('variantPanel');
+  const variantClose=document.getElementById('variantClose');
   if(!stage||!resetBtn)return;
 
   const LONG_PRESS=485;
@@ -14,9 +16,6 @@
     'armchair.webp':'Кресло','sofa.webp':'Диван','bookcase.webp':'Книжный шкаф','stove.webp':'Камин','table.webp':'Чайный столик','nightstand.webp':'Тумбочка','garden.webp':'Тумба с растениями','rug.webp':'Джутовый ковёр','round_bed.webp':'Круглая лежанка','bed_wicker.webp':'Плетёная лежанка','bed_house.webp':'Домик-лежанка','plant.webp':'Растение','plant_alt1.webp':'Растение','plant_alt2.webp':'Растение'
   };
 
-  // Do not carry over the broken deletion state from the previous build.
-  // The v2 key starts with the full default room once, then stores future
-  // confirmed deletions normally.
   try{localStorage.removeItem(LEGACY_BASE_DELETE_KEY)}catch{}
 
   let deletedBase=[];
@@ -95,7 +94,8 @@
 
   function openConfirm(el){
     if(!el?.isConnected)return;
-    document.getElementById('variantClose')?.click();
+    variantClose?.click();
+    clearSelection();
     confirmTarget=el;
     const name=itemName(el),src=itemImage(el);
     title.textContent=name;
@@ -138,6 +138,33 @@
   confirmBackdrop.addEventListener('click',()=>closeConfirm(true));
   confirmDialog.addEventListener('pointerdown',e=>e.stopPropagation());
 
+  /* Customizable items use their own picker panel. Deletion lives inside that
+     panel, so it can never overlap the floating delete chip. */
+  if(variantPanel&&variantClose){
+    const head=variantPanel.querySelector('.variant-head');
+    if(head){
+      let actions=head.querySelector('.variant-head-actions');
+      if(!actions){
+        actions=document.createElement('div');
+        actions.className='variant-head-actions';
+        head.insertBefore(actions,variantClose);
+        actions.appendChild(variantClose);
+      }
+      const deleteBtn=document.createElement('button');
+      deleteBtn.type='button';
+      deleteBtn.className='variant-delete';
+      deleteBtn.setAttribute('aria-label','Удалить этот предмет');
+      deleteBtn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.8 7.2h14.4"/><path d="M9 7.2V5.4h6v1.8"/><path d="M7 7.2l.8 11.2h8.4L17 7.2"/><path d="M10 10.2v5.2M14 10.2v5.2"/></svg>';
+      actions.insertBefore(deleteBtn,variantClose);
+      deleteBtn.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation()});
+      deleteBtn.addEventListener('click',e=>{
+        e.preventDefault();e.stopPropagation();
+        const target=stage.querySelector('.picker-target');
+        if(target)openConfirm(target);
+      });
+    }
+  }
+
   function cancelPress(){if(!press)return;clearTimeout(press.timer);press=null}
   function cancelNativeLongPress(pointerId,x,y){
     try{
@@ -145,7 +172,7 @@
       ev.__motyaDeleteSynthetic=true;
       stage.dispatchEvent(ev);
     }catch{}
-    document.getElementById('variantClose')?.click();
+    variantClose?.click();
   }
 
   stage.addEventListener('pointerdown',e=>{
@@ -161,10 +188,13 @@
     const p={id:e.pointerId,el,sx:e.clientX,sy:e.clientY,x:e.clientX,y:e.clientY,timer:0};
     p.timer=setTimeout(()=>{
       if(press!==p||!el.isConnected)return;
-      // Plants and beds keep the original long-press so their variant panel
-      // opens. The delete chip appears at the same time in a separate UI layer.
-      if(!isCustomizable(el))cancelNativeLongPress(p.id,p.x,p.y);
       press=null;
+      if(isCustomizable(el)){
+        /* app.js owns this long press and opens the variants panel. */
+        clearSelection();
+        return;
+      }
+      cancelNativeLongPress(p.id,p.x,p.y);
       selectItem(el);
     },LONG_PRESS);
     press=p;
