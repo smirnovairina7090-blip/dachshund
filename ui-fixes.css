@@ -1,12 +1,27 @@
-/* Final mobile UI corrections: clean shop tabs + no floor grid. */
+/* Final mobile UI corrections: clean shop tabs + no visible floor zone. */
 
-/* Remove all decorative grid/sweep layers from the floor in arrange mode. */
+/* Floor placement remains functional in JS, but the guide is completely invisible. */
+.floor-guide,
+.stage.arrange-mode .floor-guide,
+.floor-guide.edge,
+.stage.picker-open .floor-guide{
+  opacity:0!important;
+  background:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+  border:0!important;
+  outline:0!important;
+  filter:none!important;
+  animation:none!important;
+}
 .floor-guide::before,
 .floor-guide::after{
   content:none!important;
   display:none!important;
+  opacity:0!important;
   animation:none!important;
   background:none!important;
+  box-shadow:none!important;
 }
 .polish-mode-flash{display:none!important}
 
