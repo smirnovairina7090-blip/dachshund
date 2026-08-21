@@ -1,0 +1,49 @@
+/* Keep every furniture preview fully contained inside the delete confirmation card. */
+.delete-confirm-icon{
+  width:108px!important;
+  height:94px!important;
+  padding:8px!important;
+  margin:0 auto 12px!important;
+  box-sizing:border-box!important;
+  overflow:hidden!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+.delete-confirm-thumb{
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+.delete-confirm-thumb img{
+  display:block!important;
+  width:auto!important;
+  height:auto!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  margin:auto!important;
+  flex:0 1 auto!important;
+}
+.delete-confirm small,
+.delete-confirm-title,
+.delete-confirm p{
+  position:relative!important;
+  z-index:2!important;
+}
+
+/* Also keep catalogue artwork safely inside its own thumbnail area. */
+.shop-thumb{overflow:hidden!important}
+.shop-thumb img{
+  width:auto!important;
+  height:auto!important;
+  object-fit:contain!important;
+  object-position:center!important;
+}
