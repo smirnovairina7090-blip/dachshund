@@ -52,11 +52,23 @@
   }
   function itemImage(el){return el.querySelector('img')?.getAttribute('src')||''}
   function saveDeletedBase(){localStorage.setItem(BASE_DELETE_KEY,JSON.stringify(deletedBase))}
+  function isCustomizable(el){return el?.classList.contains('customizable')||el?.dataset.id==='plant'||el?.dataset.id==='bed'}
+
+  function positionChip(){
+    if(!selected?.el?.isConnected||!selected?.chip?.isConnected)return;
+    const er=selected.el.getBoundingClientRect();
+    const sr=stage.getBoundingClientRect();
+    const size=34;
+    const left=Math.max(8,Math.min(sr.width-size-8,er.right-sr.left-size*.72));
+    const top=Math.max(8,Math.min(sr.height-size-8,er.top-sr.top+4));
+    selected.chip.style.left=left+'px';
+    selected.chip.style.top=top+'px';
+  }
 
   function clearSelection(){
     if(!selected)return;
-    selected.el.classList.remove('global-delete-selected');
-    selected.el.querySelector('.global-delete-chip')?.remove();
+    selected.el?.classList.remove('global-delete-selected');
+    selected.chip?.remove();
     selected=null;
   }
 
@@ -64,17 +76,20 @@
     clearSelection();
     if(!el?.isConnected)return;
     const chip=document.createElement('button');
-    chip.type='button';chip.className='global-delete-chip';chip.setAttribute('aria-label','Удалить предмет');chip.textContent='×';
+    chip.type='button';chip.className='global-delete-chip global-delete-chip-floating';chip.setAttribute('aria-label','Удалить предмет');chip.textContent='×';
     chip.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation()});
     chip.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openConfirm(el)});
-    el.appendChild(chip);
+    stage.appendChild(chip);
     el.classList.add('global-delete-selected');
     selected={el,chip};
+    positionChip();
+    requestAnimationFrame(positionChip);
     vibrate(10);
   }
 
   function openConfirm(el){
     if(!el?.isConnected)return;
+    document.getElementById('variantClose')?.click();
     confirmTarget=el;
     const name=itemName(el),src=itemImage(el);
     title.textContent=name;
@@ -140,7 +155,9 @@
     const p={id:e.pointerId,el,sx:e.clientX,sy:e.clientY,x:e.clientX,y:e.clientY,timer:0};
     p.timer=setTimeout(()=>{
       if(press!==p||!el.isConnected)return;
-      cancelNativeLongPress(p.id,p.x,p.y);
+      // For plants and beds, keep their native long-press alive so the
+      // variant picker opens too. Other furniture still gets delete-only.
+      if(!isCustomizable(el))cancelNativeLongPress(p.id,p.x,p.y);
       press=null;
       selectItem(el);
     },LONG_PRESS);
@@ -155,6 +172,11 @@
   stage.addEventListener('pointerup',e=>{if(press?.id===e.pointerId)cancelPress()},true);
   stage.addEventListener('pointercancel',e=>{if(e.__motyaDeleteSynthetic)return;if(press?.id===e.pointerId)cancelPress()},true);
   stage.addEventListener('contextmenu',e=>{if(e.target.closest?.('.item'))e.preventDefault()});
+
+  // Keep the floating delete chip attached to the selected object while UI
+  // layers animate in or the viewport changes.
+  function followSelection(){positionChip();requestAnimationFrame(followSelection)}
+  requestAnimationFrame(followSelection);
 
   deletedBase.forEach(id=>objectsQuery(id)?.remove());
   function objectsQuery(id){return stage.querySelector(`.item[data-id="${id}"]`)}
