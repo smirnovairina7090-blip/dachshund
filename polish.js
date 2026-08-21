@@ -6,14 +6,14 @@
 
   const reduceMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
-  // Extra living-light layer. It is visual only and sits below furniture.
+  // Living light, always behind furniture.
   if(!scene.querySelector('.polish-light')){
     const light=document.createElement('div');
     light.className='polish-light';
     if(floorGuide)scene.insertBefore(light,floorGuide);else scene.appendChild(light);
   }
 
-  // Sliding indicator for the two shop categories + one-time "new" dot.
+  // Sliding shop indicator + one-time new dot for plants.
   const tabsWrap=stage.querySelector('.shop-tabs');
   const shopTabs=[...stage.querySelectorAll('.shop-tab')];
   let indicator=null;
@@ -24,35 +24,53 @@
     tabsWrap.prepend(indicator);
 
     const plantsTab=shopTabs.find(t=>t.dataset.category==='plants');
-    const PLANTS_SEEN='motya-shop-plants-polish-seen-v1';
+    const PLANTS_SEEN='motya-shop-plants-polish-seen-v2';
     if(plantsTab&&!localStorage.getItem(PLANTS_SEEN))plantsTab.classList.add('has-new');
 
     const syncIndicator=()=>{
       const active=shopTabs.find(t=>t.classList.contains('active'))||shopTabs[0];
-      indicator.style.transform=active?.dataset.category==='plants'?'translateX(calc(100% + 6px))':'translateX(0)';
+      indicator.style.transform=active?.dataset.category==='plants'?'translateX(calc(100% + 4px))':'translateX(0)';
+    };
+    const animateCards=()=>{
+      if(reduceMotion)return;
+      [...stage.querySelectorAll('.shop-grid .shop-card')].forEach((card,i)=>{
+        card.classList.remove('polish-card-in');
+        card.style.animationDelay=(i*34)+'ms';
+        void card.offsetWidth;
+        card.classList.add('polish-card-in');
+      });
     };
     syncIndicator();
+    requestAnimationFrame(animateCards);
 
     shopTabs.forEach(tab=>tab.addEventListener('click',()=>{
       if(tab.dataset.category==='plants'){
         tab.classList.remove('has-new');
         try{localStorage.setItem(PLANTS_SEEN,'1')}catch{}
       }
-      requestAnimationFrame(syncIndicator);
+      requestAnimationFrame(()=>{syncIndicator();animateCards()});
     }));
-    document.getElementById('shopBtn')?.addEventListener('click',()=>requestAnimationFrame(syncIndicator));
+    document.getElementById('shopBtn')?.addEventListener('click',()=>requestAnimationFrame(()=>{syncIndicator();animateCards()}));
   }
 
-  // Gentle selection feedback in arrange mode. Drag/delete states still take priority in CSS.
+  // Clear, tactile selection feedback in arrange mode.
   let selected=null;
-  function clearSelected(){
-    selected?.classList.remove('polish-selected');
-    selected=null;
-  }
+  function clearSelected(){selected?.classList.remove('polish-selected');selected=null}
   function select(el){
     if(selected===el)return;
     clearSelected();
-    if(el?.isConnected){selected=el;selected.classList.add('polish-selected')}
+    if(el?.isConnected){
+      selected=el;
+      selected.classList.add('polish-selected');
+      if(!reduceMotion){
+        const img=selected.querySelector('img');
+        img?.animate?.([
+          {transform:'translateY(0) scale(1)'},
+          {transform:'translateY(-2px) scale(1.015)',offset:.58},
+          {transform:'translateY(0) scale(1)'}
+        ],{duration:260,easing:'cubic-bezier(.16,1,.3,1)'});
+      }
+    }
   }
   stage.addEventListener('pointerdown',e=>{
     if(!stage.classList.contains('arrange-mode'))return clearSelected();
@@ -63,7 +81,27 @@
   document.getElementById('viewMode')?.addEventListener('click',clearSelected);
   document.getElementById('shopBtn')?.addEventListener('click',clearSelected);
 
-  // Card -> room purchase flight. The real object is still created by shop.js.
+  // Entering arrange mode gets one visible floor flash + sequential object wake-up.
+  function arrangeEntrance(){
+    if(reduceMotion)return;
+    const flash=document.createElement('div');
+    flash.className='polish-mode-flash';
+    stage.appendChild(flash);
+    flash.addEventListener('animationend',()=>flash.remove(),{once:true});
+    const items=[...stage.querySelectorAll('.item')].filter(el=>el.isConnected);
+    items.forEach((el,i)=>{
+      const img=el.querySelector('img');
+      if(!img)return;
+      setTimeout(()=>img.animate?.([
+        {transform:'translateY(0) scale(1)',filter:'brightness(1)'},
+        {transform:'translateY(-3px) scale(1.018)',filter:'brightness(1.11)',offset:.5},
+        {transform:'translateY(0) scale(1)',filter:'brightness(1)'}
+      ],{duration:330,easing:'cubic-bezier(.16,1,.3,1)'}),Math.min(i*38,300));
+    });
+  }
+  document.getElementById('arrange')?.addEventListener('click',()=>setTimeout(arrangeEntrance,30));
+
+  // Card -> room purchase flight. Real creation remains in shop.js.
   function flyPurchase(card){
     if(reduceMotion)return;
     const img=card.querySelector('img');
@@ -76,13 +114,14 @@
     Object.assign(ghost.style,{left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px'});
     document.body.appendChild(ghost);
     const sx=r.left+r.width/2,sy=r.top+r.height/2;
-    const tx=sr.left+sr.width/2,ty=sr.top+sr.height*.69;
+    const tx=sr.left+sr.width/2,ty=sr.top+sr.height*.68;
     const dx=tx-sx,dy=ty-sy;
     const a=ghost.animate([
-      {transform:'translate3d(0,0,0) scale(1)',opacity:.98,filter:'drop-shadow(0 9px 8px rgba(55,31,16,.20))'},
-      {transform:`translate3d(${dx*.56}px,${dy*.48}px,0) scale(.72)`,opacity:1,offset:.56},
-      {transform:`translate3d(${dx}px,${dy}px,0) scale(.38)`,opacity:0,filter:'drop-shadow(0 3px 4px rgba(55,31,16,.08)) blur(1px) brightness(1.1)'}
-    ],{duration:430,easing:'cubic-bezier(.2,.78,.22,1)'});
+      {transform:'translate3d(0,0,0) scale(1)',opacity:1,filter:'drop-shadow(0 10px 9px rgba(55,31,16,.24)) brightness(1)'},
+      {transform:`translate3d(${dx*.32}px,${dy*.18}px,0) scale(.93) rotate(-1deg)`,opacity:1,offset:.28},
+      {transform:`translate3d(${dx*.72}px,${dy*.62}px,0) scale(.68) rotate(1deg)`,opacity:.96,filter:'drop-shadow(0 7px 7px rgba(55,31,16,.18)) brightness(1.08)',offset:.68},
+      {transform:`translate3d(${dx}px,${dy}px,0) scale(.48)`,opacity:0,filter:'drop-shadow(0 2px 3px rgba(55,31,16,.06)) blur(1px) brightness(1.18)'}
+    ],{duration:590,easing:'cubic-bezier(.2,.78,.22,1)'});
     a.finished.then(()=>ghost.remove()).catch(()=>ghost.remove());
   }
   document.addEventListener('click',e=>{
@@ -90,23 +129,24 @@
     if(!card)return;
     card.classList.add('purchasing');
     flyPurchase(card);
-    setTimeout(()=>card.classList.remove('purchasing'),220);
+    setTimeout(()=>card.classList.remove('purchasing'),260);
   },true);
 
-  // Variant changes already crossfade in app.js; this adds a soft spatial halo around the item.
+  // Variant change: visible halo around the actual bed/plant.
   function morphHalo(item){
     if(reduceMotion||!item)return;
     const r=item.getBoundingClientRect();
     if(r.width<2||r.height<2)return;
     const halo=document.createElement('div');
     halo.className='morph-halo';
-    Object.assign(halo.style,{left:(r.left-6)+'px',top:(r.top-6)+'px',width:(r.width+12)+'px',height:(r.height+12)+'px'});
+    Object.assign(halo.style,{left:(r.left-8)+'px',top:(r.top-8)+'px',width:(r.width+16)+'px',height:(r.height+16)+'px'});
     document.body.appendChild(halo);
     const a=halo.animate([
-      {opacity:0,transform:'scale(.94)'},
-      {opacity:.8,transform:'scale(1.015)',offset:.42},
-      {opacity:0,transform:'scale(1.075)'}
-    ],{duration:420,easing:'cubic-bezier(.2,.8,.2,1)'});
+      {opacity:0,transform:'scale(.9)'},
+      {opacity:.92,transform:'scale(1.02)',offset:.36},
+      {opacity:.35,transform:'scale(1.07)',offset:.7},
+      {opacity:0,transform:'scale(1.12)'}
+    ],{duration:520,easing:'cubic-bezier(.16,1,.3,1)'});
     a.finished.then(()=>halo.remove()).catch(()=>halo.remove());
   }
   document.addEventListener('click',e=>{
@@ -114,7 +154,7 @@
     morphHalo(stage.querySelector('.picker-target'));
   },true);
 
-  // A visual dissolve ghost runs alongside the existing persistence/delete flow.
+  // Dissolve animation alongside existing delete persistence.
   function dissolveSelected(){
     if(reduceMotion)return;
     const item=stage.querySelector('.global-delete-selected');
@@ -127,33 +167,31 @@
     Object.assign(ghost.style,{left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px'});
     document.body.appendChild(ghost);
     const a=ghost.animate([
-      {opacity:.96,transform:'translate3d(0,0,0) scale(1)',filter:'blur(0) brightness(1)'},
-      {opacity:.54,transform:'translate3d(0,-3px,0) scale(.94)',filter:'blur(.6px) brightness(1.06)',offset:.5},
-      {opacity:0,transform:'translate3d(0,-8px,0) scale(.78)',filter:'blur(5px) brightness(1.12)'}
-    ],{duration:390,easing:'cubic-bezier(.3,.02,.3,1)'});
+      {opacity:1,transform:'translate3d(0,0,0) scale(1)',filter:'blur(0) brightness(1)'},
+      {opacity:.72,transform:'translate3d(0,-4px,0) scale(.96)',filter:'blur(.4px) brightness(1.08)',offset:.38},
+      {opacity:.28,transform:'translate3d(0,-10px,0) scale(.86)',filter:'blur(2px) brightness(1.18)',offset:.7},
+      {opacity:0,transform:'translate3d(0,-18px,0) scale(.72)',filter:'blur(7px) brightness(1.25)'}
+    ],{duration:520,easing:'cubic-bezier(.3,.02,.3,1)'});
     a.finished.then(()=>ghost.remove()).catch(()=>ghost.remove());
 
     const cx=r.left+r.width/2,cy=r.top+r.height*.58;
-    for(let i=0;i<6;i++){
+    for(let i=0;i<9;i++){
       const p=document.createElement('i');
       p.className='delete-spark';
       p.style.left=(cx-2)+'px';p.style.top=(cy-2)+'px';document.body.appendChild(p);
-      const angle=(-Math.PI*.9)+(i/5)*Math.PI*.8;
-      const dist=18+Math.random()*24;
-      const dx=Math.cos(angle)*dist,dy=Math.sin(angle)*dist-8-Math.random()*8;
+      const angle=(-Math.PI*.95)+(i/8)*Math.PI*.9;
+      const dist=22+Math.random()*34;
+      const dx=Math.cos(angle)*dist,dy=Math.sin(angle)*dist-10-Math.random()*12;
       const pa=p.animate([
-        {opacity:0,transform:'translate3d(0,0,0) scale(.5)'},
-        {opacity:.8,transform:`translate3d(${dx*.35}px,${dy*.35}px,0) scale(1)`,offset:.35},
-        {opacity:0,transform:`translate3d(${dx}px,${dy}px,0) scale(.2)`}
-      ],{duration:330+Math.random()*110,easing:'ease-out'});
+        {opacity:0,transform:'translate3d(0,0,0) scale(.45)'},
+        {opacity:.95,transform:`translate3d(${dx*.32}px,${dy*.32}px,0) scale(1)`,offset:.3},
+        {opacity:0,transform:`translate3d(${dx}px,${dy}px,0) scale(.15)`}
+      ],{duration:430+Math.random()*150,easing:'ease-out'});
       pa.finished.then(()=>p.remove()).catch(()=>p.remove());
     }
   }
-  document.addEventListener('click',e=>{
-    if(e.target.closest?.('.delete-accept'))dissolveSelected();
-  },true);
+  document.addEventListener('click',e=>{if(e.target.closest?.('.delete-accept'))dissolveSelected()},true);
 
-  // Keep stale selection classes from surviving DOM deletion or mode changes.
   const observer=new MutationObserver(()=>{if(selected&&!selected.isConnected)selected=null});
   observer.observe(stage,{childList:true,subtree:true});
 })();
