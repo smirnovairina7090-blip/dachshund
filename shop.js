@@ -34,7 +34,7 @@
   try{stored=JSON.parse(localStorage.getItem(STORE_KEY)||'[]')}catch{stored=[]}
   if(!Array.isArray(stored))stored=[];
   const added=[];
-  let replacingItem=null;
+  let deleteTarget=null;
 
   function sceneMetrics(){
     const r=scene.getBoundingClientRect();
@@ -62,12 +62,40 @@
     item.el.style.setProperty('--scale',d.toFixed(4));
     item.el.style.setProperty('--shadow-w',Math.max(42,(item.def.foot||70)*.94)+'px');
     item.el.style.zIndex=item.def.flat?34:100+Math.round(item.y);
-    if(!item.el.classList.contains('dragging')&&!item.el.classList.contains('shop-holding')){
+    if(!item.el.classList.contains('dragging')&&!item.el.classList.contains('shop-holding')&&!item.el.classList.contains('delete-ready')){
       item.el.style.filter=`drop-shadow(0 ${Math.round(5+d*4)}px ${Math.round(5+d*2)}px rgba(58,28,10,.18))`;
     }
   }
   function save(){
     localStorage.setItem(STORE_KEY,JSON.stringify(added.map(i=>({id:i.id,type:i.def.type,x:Math.round(i.x),y:Math.round(i.y)}))));
+  }
+  function hideDelete(){
+    if(!deleteTarget)return;
+    deleteTarget.el.classList.remove('delete-ready','shop-holding');
+    render(deleteTarget);
+    deleteTarget=null;
+  }
+  function showDelete(item){
+    hideDelete();
+    deleteTarget=item;
+    item.el.classList.remove('shop-holding');
+    item.el.classList.add('delete-ready');
+    item.el.style.filter='';
+    try{navigator.vibrate?.(11)}catch{}
+  }
+  function removeItem(item){
+    if(!item)return;
+    if(deleteTarget===item)deleteTarget=null;
+    const index=added.indexOf(item);
+    if(index>=0)added.splice(index,1);
+    save();
+    try{navigator.vibrate?.(8)}catch{}
+    const animation=item.el.animate?.([
+      {opacity:1,transform:getComputedStyle(item.el).transform},
+      {opacity:0,transform:'translate3d(-50%,-100%,0) scale(.72)'}
+    ],{duration:180,easing:'ease-in'});
+    if(animation)animation.finished.then(()=>item.el.remove()).catch(()=>item.el.remove());
+    else item.el.remove();
   }
   function createItem(data,animate=false){
     const def=itemByType(data.type);if(!def)return null;
@@ -76,7 +104,11 @@
     el.className='item shop-added'+(def.flat?' flat':'');
     el.dataset.shopId=data.id;
     const img=document.createElement('img');img.src=def.src;img.alt='';img.draggable=false;
-    el.appendChild(img);objects.appendChild(el);
+    const del=document.createElement('button');
+    del.type='button';del.className='shop-delete';del.setAttribute('aria-label','Удалить предмет');del.textContent='×';
+    del.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation()});
+    del.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();removeItem(item)});
+    el.append(img,del);objects.appendChild(el);
     const item={id:data.id,def,x:pos.x,y:pos.y,el};added.push(item);render(item);
     if(animate){
       el.animate?.([
@@ -96,59 +128,28 @@
 
   const backdrop=document.createElement('div');backdrop.className='shop-backdrop';stage.appendChild(backdrop);
   const panel=document.createElement('section');panel.className='shop-panel';panel.setAttribute('aria-hidden','true');
-  panel.innerHTML='<div class="shop-handle"></div><div class="shop-head"><div><small class="shop-kicker">Мебель для комнаты</small><b class="shop-title">Магазин</b><p class="shop-subtitle">Пока всё бесплатно</p></div><button class="shop-close" type="button" aria-label="Закрыть">×</button></div><div class="shop-grid"></div>';
+  panel.innerHTML='<div class="shop-handle"></div><div class="shop-head"><div><small>Мебель для комнаты</small><b>Магазин</b><p>Пока всё бесплатно</p></div><button class="shop-close" type="button" aria-label="Закрыть">×</button></div><div class="shop-grid"></div>';
   stage.appendChild(panel);
   const grid=panel.querySelector('.shop-grid');
-  const shopKicker=panel.querySelector('.shop-kicker');
-  const shopTitle=panel.querySelector('.shop-title');
-  const shopSubtitle=panel.querySelector('.shop-subtitle');
-  const cards=[];
 
   catalog.forEach(def=>{
-    const card=document.createElement('button');card.type='button';card.className='shop-card';card.dataset.type=def.type;
+    const card=document.createElement('button');card.type='button';card.className='shop-card';
     card.innerHTML=`<span class="shop-thumb"><img src="${def.src}" alt="${def.name}"></span><span class="shop-name">${def.name}</span><span class="shop-price">Бесплатно</span>`;
-    card.addEventListener('click',()=>choose(def.type));grid.appendChild(card);cards.push(card);
+    card.addEventListener('click',()=>buy(def.type));grid.appendChild(card);
   });
 
-  function syncCards(){
-    cards.forEach(card=>card.classList.toggle('selected',!!replacingItem&&card.dataset.type===replacingItem.def.type));
-  }
-  function openShop(item=null){
+  function openShop(){
+    hideDelete();
     document.getElementById('variantClose')?.click();
-    replacingItem=item;
-    if(item){
-      shopKicker.textContent='Замена предмета';shopTitle.textContent='Выбери мебель';shopSubtitle.textContent='Новый предмет останется на этом месте';
-      item.el.classList.add('shop-replacing');
-    }else{
-      shopKicker.textContent='Мебель для комнаты';shopTitle.textContent='Магазин';shopSubtitle.textContent='Пока всё бесплатно';
-    }
-    syncCards();
     stage.classList.add('shop-open');backdrop.classList.add('open');panel.classList.add('open');panel.setAttribute('aria-hidden','false');shopBtn.setAttribute('aria-expanded','true');
   }
   function closeShop(){
-    if(replacingItem){replacingItem.el.classList.remove('shop-replacing','shop-holding');render(replacingItem)}
-    replacingItem=null;syncCards();
     stage.classList.remove('shop-open');backdrop.classList.remove('open');panel.classList.remove('open');panel.setAttribute('aria-hidden','true');shopBtn.setAttribute('aria-expanded','false');
-  }
-  function replaceItem(item,type){
-    const def=itemByType(type);if(!item||!def)return;
-    if(item.def.type===type){closeShop();return}
-    const pos=constrain(def,item.x,item.y);
-    item.def=def;item.x=pos.x;item.y=pos.y;
-    item.el.classList.toggle('flat',!!def.flat);
-    const img=item.el.querySelector('img');
-    img.animate?.([{opacity:1,transform:'scale(1)'},{opacity:.15,transform:'scale(.94)'}],{duration:90,easing:'ease-in'}).finished?.catch(()=>{});
-    setTimeout(()=>{
-      img.src=def.src;render(item);save();
-      img.animate?.([{opacity:.15,transform:'scale(.94)'},{opacity:1,transform:'scale(1.02)',offset:.7},{opacity:1,transform:'scale(1)'}],{duration:260,easing:'cubic-bezier(.2,.8,.2,1)'});
-      try{navigator.vibrate?.(7)}catch{}
-    },90);
-    closeShop();
   }
   function buy(type){
     const def=itemByType(type);if(!def)return;
     arrangeBtn.click();
-    closeShop();
+    closeShop();hideDelete();
     const same=added.filter(i=>i.def.type===type).length;
     const center=visibleWorldCenter()+((same%3)-1)*46;
     const id=`shop_${type}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
@@ -157,40 +158,37 @@
     try{navigator.vibrate?.(7)}catch{}
     if(item){item.el.classList.add('shop-new');setTimeout(()=>item.el.classList.remove('shop-new'),650)}
   }
-  function choose(type){
-    if(replacingItem)replaceItem(replacingItem,type);else buy(type);
-  }
-
-  shopBtn.addEventListener('click',()=>openShop());backdrop.addEventListener('click',closeShop);panel.querySelector('.shop-close').addEventListener('click',closeShop);
+  shopBtn.addEventListener('click',openShop);backdrop.addEventListener('click',closeShop);panel.querySelector('.shop-close').addEventListener('click',closeShop);
   panel.addEventListener('pointerdown',e=>e.stopPropagation());backdrop.addEventListener('pointerdown',e=>e.stopPropagation());
 
   let drag=null;
   function clearHold(){
     if(!drag)return;clearTimeout(drag.holdTimer);clearTimeout(drag.holdVisualTimer);
-    if(drag.item){drag.item.el.classList.remove('shop-holding');render(drag.item)}
+    if(drag.item&&!drag.item.el.classList.contains('delete-ready')){drag.item.el.classList.remove('shop-holding');render(drag.item)}
   }
   stage.addEventListener('pointerdown',e=>{
+    if(e.target.closest?.('.shop-delete'))return;
     const el=e.target.closest?.('.shop-added');
-    if(!el||!stage.classList.contains('arrange-mode')||panel.classList.contains('open'))return;
+    if(!el){hideDelete();return}
+    if(!stage.classList.contains('arrange-mode')||panel.classList.contains('open'))return;
     const item=added.find(i=>i.id===el.dataset.shopId);if(!item)return;
+    if(deleteTarget&&deleteTarget!==item)hideDelete();
     e.preventDefault();e.stopPropagation();stage.setPointerCapture?.(e.pointerId);
     const p=screenToWorld(e.clientX,e.clientY);
     drag={id:e.pointerId,item,dx:p.x-item.x,dy:p.y-item.y,sx:e.clientX,sy:e.clientY,started:false,moved:false,longPressed:false,holdTimer:0,holdVisualTimer:0};
     drag.holdVisualTimer=setTimeout(()=>{if(drag&&!drag.started&&!drag.moved){item.el.classList.add('shop-holding');item.el.style.filter='';}},150);
     drag.holdTimer=setTimeout(()=>{
       if(!drag||drag.started||drag.moved)return;
-      drag.longPressed=true;item.el.classList.remove('shop-holding');
-      try{navigator.vibrate?.(11)}catch{}
-      openShop(item);
+      drag.longPressed=true;showDelete(item);
     },LONG_PRESS);
   },true);
   stage.addEventListener('pointermove',e=>{
     if(!drag||drag.id!==e.pointerId)return;
     e.preventDefault();e.stopPropagation();
     const distance=Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy);
-    if(distance>=HOLD_SLOP&&!drag.moved){drag.moved=true;clearHold()}
+    if(distance>=HOLD_SLOP&&!drag.moved){drag.moved=true;clearHold();hideDelete()}
     if(drag.longPressed)return;
-    if(!drag.started&&distance>4){drag.started=true;drag.item.el.classList.add('dragging');drag.item.el.style.filter='';}
+    if(!drag.started&&distance>4){drag.started=true;hideDelete();drag.item.el.classList.add('dragging');drag.item.el.style.filter='';}
     if(!drag.started)return;
     const p=screenToWorld(e.clientX,e.clientY);const pos=constrain(drag.item.def,p.x-drag.dx,p.y-drag.dy);
     drag.item.x=pos.x;drag.item.y=pos.y;render(drag.item);
@@ -205,6 +203,6 @@
   stage.addEventListener('pointerup',finishDrag,true);stage.addEventListener('pointercancel',finishDrag,true);
 
   resetBtn.addEventListener('click',()=>{
-    added.splice(0).forEach(i=>i.el.remove());localStorage.removeItem(STORE_KEY);closeShop();
+    hideDelete();added.splice(0).forEach(i=>i.el.remove());localStorage.removeItem(STORE_KEY);closeShop();
   });
 })();
