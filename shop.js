@@ -9,25 +9,27 @@
   const W=1916,H=821;
   const floor={top:535,bottom:802,left:40,right:1876};
   const STORE_KEY='motya-shop-items-v1';
+  const COINS_KEY='motya-coins-v1';
+  const START_COINS=120;
   const LONG_PRESS=520;
   const HOLD_SLOP=8;
 
   const catalog=[
-    {type:'armchair',category:'furniture',name:'Кресло',src:'assets/armchair.webp',w:285,foot:86,y:690},
-    {type:'sofa',category:'furniture',name:'Диван',src:'assets/sofa.webp',w:505,foot:150,y:665},
-    {type:'bookcase',category:'furniture',name:'Книжный шкаф',src:'assets/bookcase.webp',w:405,foot:112,y:635},
-    {type:'stove',category:'furniture',name:'Камин',src:'assets/stove.webp',w:285,foot:82,y:625},
-    {type:'table',category:'furniture',name:'Чайный столик',src:'assets/table.webp',w:225,foot:70,pad:25,y:730},
-    {type:'nightstand',category:'furniture',name:'Тумбочка',src:'assets/nightstand.webp',w:175,foot:58,pad:6,y:700},
-    {type:'garden',category:'furniture',name:'Тумба с растениями',src:'assets/garden.webp',w:400,foot:105,y:610},
-    {type:'rug',category:'furniture',name:'Джутовый ковёр',src:'assets/rug.webp',w:545,foot:170,flat:true,y:760},
-    {type:'round_bed',category:'furniture',name:'Круглая лежанка',src:'assets/round_bed.webp',w:220,foot:76,pad:4,y:710},
-    {type:'bed_wicker',category:'furniture',name:'Плетёная лежанка',src:'assets/bed_wicker.webp',w:235,foot:82,y:710},
-    {type:'bed_house',category:'furniture',name:'Домик-лежанка',src:'assets/bed_house.webp',w:245,foot:86,y:705},
+    {type:'armchair',category:'furniture',name:'Кресло',price:45,src:'assets/armchair.webp',w:285,foot:86,y:690},
+    {type:'sofa',category:'furniture',name:'Диван',price:180,src:'assets/sofa.webp',w:505,foot:150,y:665},
+    {type:'bookcase',category:'furniture',name:'Книжный шкаф',price:220,src:'assets/bookcase.webp',w:405,foot:112,y:635},
+    {type:'stove',category:'furniture',name:'Камин',price:160,src:'assets/stove.webp',w:285,foot:82,y:625},
+    {type:'table',category:'furniture',name:'Чайный столик',price:35,src:'assets/table.webp',w:225,foot:70,pad:25,y:730},
+    {type:'nightstand',category:'furniture',name:'Тумбочка',price:55,src:'assets/nightstand.webp',w:175,foot:58,pad:6,y:700},
+    {type:'garden',category:'furniture',name:'Тумба с растениями',price:140,src:'assets/garden.webp',w:400,foot:105,y:610},
+    {type:'rug',category:'furniture',name:'Джутовый ковёр',price:75,src:'assets/rug.webp',w:545,foot:170,flat:true,y:760},
+    {type:'round_bed',category:'furniture',name:'Круглая лежанка',price:60,src:'assets/round_bed.webp',w:220,foot:76,pad:4,y:710},
+    {type:'bed_wicker',category:'furniture',name:'Плетёная лежанка',price:110,src:'assets/bed_wicker.webp',w:235,foot:82,y:710},
+    {type:'bed_house',category:'furniture',name:'Домик-лежанка',price:200,src:'assets/bed_house.webp',w:245,foot:86,y:705},
 
-    {type:'plant_monstera',category:'plants',name:'Монстера',src:'assets/plant.webp',w:180,foot:52,pad:13,y:675,ambient:true},
-    {type:'plant_leafy',category:'plants',name:'Пышное растение',src:'assets/plant_alt1.webp',w:180,foot:52,pad:13,y:675,ambient:true},
-    {type:'plant_trailing',category:'plants',name:'Свисающее растение',src:'assets/plant_alt2.webp',w:180,foot:52,pad:13,y:675,ambient:true}
+    {type:'plant_monstera',category:'plants',name:'Монстера',price:25,src:'assets/plant.webp',w:180,foot:52,pad:13,y:675,ambient:true},
+    {type:'plant_leafy',category:'plants',name:'Пышное растение',price:45,src:'assets/plant_alt1.webp',w:180,foot:52,pad:13,y:675,ambient:true},
+    {type:'plant_trailing',category:'plants',name:'Свисающее растение',price:95,src:'assets/plant_alt2.webp',w:180,foot:52,pad:13,y:675,ambient:true}
   ];
 
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -37,9 +39,19 @@
   let stored=[];
   try{stored=JSON.parse(localStorage.getItem(STORE_KEY)||'[]')}catch{stored=[]}
   if(!Array.isArray(stored))stored=[];
+
+  let coins=START_COINS;
+  try{
+    const saved=Number(localStorage.getItem(COINS_KEY));
+    if(Number.isFinite(saved)&&saved>=0)coins=Math.floor(saved);
+  }catch{}
+
   const added=[];
   let deleteTarget=null;
   let activeCategory='furniture';
+
+  function saveCoins(){try{localStorage.setItem(COINS_KEY,String(coins))}catch{}}
+  function coinMarkup(value){return `<span class="coin-price-icon" aria-hidden="true">★</span><span>${value}</span>`}
 
   function sceneMetrics(){
     const r=scene.getBoundingClientRect();
@@ -126,6 +138,12 @@
   }
   stored.forEach(x=>createItem(x,false));
 
+  const coinPill=document.createElement('div');
+  coinPill.className='coin-balance';
+  coinPill.setAttribute('aria-label','Баланс монет');
+  coinPill.innerHTML='<span class="coin-balance-icon" aria-hidden="true">★</span><b class="coin-balance-value"></b>';
+  stage.appendChild(coinPill);
+
   const shopBtn=document.createElement('button');
   shopBtn.id='shopBtn';shopBtn.className='shop-float';shopBtn.type='button';shopBtn.setAttribute('aria-label','Магазин мебели и растений');shopBtn.setAttribute('aria-expanded','false');
   shopBtn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h16l-1.3 10.2H5.3L4 7.5Z"/><path d="M8 7.5a4 4 0 0 1 8 0"/><path d="M9 11v1M15 11v1"/></svg><span>Магазин</span>';
@@ -136,7 +154,7 @@
   panel.innerHTML=`
     <div class="shop-handle"></div>
     <div class="shop-head">
-      <div><small>Каталог для комнаты</small><b>Магазин</b><p>Пока всё бесплатно</p></div>
+      <div><small>Каталог для комнаты</small><b>Магазин</b><p class="shop-wallet"><span class="coin-price-icon" aria-hidden="true">★</span><strong id="shopWalletValue"></strong> монет</p></div>
       <button class="shop-close" type="button" aria-label="Закрыть">×</button>
     </div>
     <div class="shop-tabs" role="tablist" aria-label="Категории магазина">
@@ -153,6 +171,19 @@
   stage.appendChild(panel);
   const grid=panel.querySelector('.shop-grid');
   const tabs=[...panel.querySelectorAll('.shop-tab')];
+  const coinValue=coinPill.querySelector('.coin-balance-value');
+  const shopWalletValue=panel.querySelector('#shopWalletValue');
+
+  function updateCoinDisplays(animate=false){
+    coinValue.textContent=String(coins);
+    shopWalletValue.textContent=String(coins);
+    if(animate){
+      coinPill.classList.remove('coin-changed');
+      void coinPill.offsetWidth;
+      coinPill.classList.add('coin-changed');
+      setTimeout(()=>coinPill.classList.remove('coin-changed'),420);
+    }
+  }
 
   function renderCatalog(category){
     activeCategory=category;
@@ -163,25 +194,38 @@
     });
     grid.replaceChildren();
     catalog.filter(def=>def.category===category).forEach(def=>{
-      const card=document.createElement('button');card.type='button';card.className='shop-card'+(def.category==='plants'?' plant-card':'');
-      card.innerHTML=`<span class="shop-thumb"><img src="${def.src}" alt="${def.name}"></span><span class="shop-name">${def.name}</span><span class="shop-price">Бесплатно</span>`;
-      card.addEventListener('click',()=>buy(def.type));grid.appendChild(card);
+      const locked=coins<def.price;
+      const card=document.createElement('button');
+      card.type='button';
+      card.className='shop-card'+(def.category==='plants'?' plant-card':'')+(locked?' shop-card-locked':'');
+      card.disabled=locked;
+      card.setAttribute('aria-label',locked?`${def.name}, ${def.price} монет, недостаточно монет`:`${def.name}, ${def.price} монет`);
+      card.innerHTML=`<span class="shop-thumb"><img src="${def.src}" alt="${def.name}"></span><span class="shop-name">${def.name}</span><span class="shop-price">${coinMarkup(def.price)}</span>${locked?'<span class="shop-lock" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="3"/><path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10"/></svg></span>':''}`;
+      if(!locked)card.addEventListener('click',()=>buy(def.type));
+      grid.appendChild(card);
     });
     grid.scrollTop=0;
   }
+
   tabs.forEach(tab=>tab.addEventListener('click',()=>renderCatalog(tab.dataset.category)));
+  updateCoinDisplays(false);
   renderCatalog(activeCategory);
 
   function openShop(){
     hideDelete();
     document.getElementById('variantClose')?.click();
+    updateCoinDisplays(false);
+    renderCatalog(activeCategory);
     stage.classList.add('shop-open');backdrop.classList.add('open');panel.classList.add('open');panel.setAttribute('aria-hidden','false');shopBtn.setAttribute('aria-expanded','true');
   }
   function closeShop(){
     stage.classList.remove('shop-open');backdrop.classList.remove('open');panel.classList.remove('open');panel.setAttribute('aria-hidden','true');shopBtn.setAttribute('aria-expanded','false');
   }
   function buy(type){
-    const def=itemByType(type);if(!def)return;
+    const def=itemByType(type);if(!def||coins<def.price)return;
+    coins-=def.price;
+    saveCoins();
+    updateCoinDisplays(true);
     arrangeBtn.click();
     closeShop();hideDelete();
     const same=added.filter(i=>i.def.type===type).length;
