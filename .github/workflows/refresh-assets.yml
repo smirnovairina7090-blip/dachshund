@@ -53,6 +53,7 @@ jobs:
               'armchair.webp': find_name('armchair_green.png'),
               'table.webp': find_name('coffee_table_round.png'),
               'garden.webp': find_name('garden_unit.png'),
+              'nightstand.webp': find_name('22_55_37 (1).png', 'furniture'),
               'round_bed.webp': find_name('23_04_49 (1).png', 'furniture'),
               'bed_wicker.webp': find_name('pet_bed_wicker.png', 'furniture'),
               'bed_house.webp': find_name('23_04_49 (2).png', 'furniture'),
