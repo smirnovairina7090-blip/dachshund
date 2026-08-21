@@ -54,12 +54,15 @@ jobs:
               'table.webp': find_name('coffee_table_round.png'),
               'garden.webp': find_name('garden_unit.png'),
               'round_bed.webp': find_name('23_04_49 (1).png', 'furniture'),
+              'bed_wicker.webp': find_name('pet_bed_wicker.png', 'furniture'),
+              'bed_house.webp': find_name('23_04_49 (2).png', 'furniture'),
               'plant.webp': find_name('22_55_37 (2).png', 'plants'),
+              'plant_alt1.webp': find_name('22_34_40 (2).png', 'plants'),
+              'plant_alt2.webp': find_name('22_34_41 (3).png', 'plants'),
           }
 
           for name, src in mapping.items():
               im = Image.open(src)
-              # Full background resolution; furniture keeps enough detail for Retina phones.
               if name != 'room.webp':
                   max_side = 1400
                   if max(im.size) > max_side:
@@ -73,7 +76,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- assets/room.webp assets/rug.webp assets/sofa.webp assets/stove.webp assets/bookcase.webp assets/armchair.webp assets/table.webp assets/garden.webp assets/round_bed.webp assets/plant.webp
+          git add -- assets/*.webp
           git diff --cached --quiet && exit 0
           git commit -m 'Refresh high quality room sprites'
           git push origin HEAD:cozy-room-v1
