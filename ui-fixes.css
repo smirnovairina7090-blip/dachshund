@@ -1,0 +1,146 @@
+/* Final mobile UI corrections: clean shop tabs + no visible floor zone. */
+
+/* Floor placement remains functional in JS, but the guide is completely invisible. */
+.floor-guide,
+.stage.arrange-mode .floor-guide,
+.floor-guide.edge,
+.stage.picker-open .floor-guide{
+  opacity:0!important;
+  background:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+  border:0!important;
+  outline:0!important;
+  filter:none!important;
+  animation:none!important;
+}
+.floor-guide::before,
+.floor-guide::after{
+  content:none!important;
+  display:none!important;
+  opacity:0!important;
+  animation:none!important;
+  background:none!important;
+  box-shadow:none!important;
+}
+.polish-mode-flash{display:none!important}
+
+/* Replace the broken sliding tab treatment with two simple, equal buttons. */
+.shop-tabs{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  align-items:center!important;
+  gap:6px!important;
+  height:auto!important;
+  min-height:44px!important;
+  margin:0 1px 8px!important;
+  padding:4px!important;
+  overflow:visible!important;
+  isolation:auto!important;
+  border-radius:16px!important;
+  background:rgba(104,79,57,.055)!important;
+  border:1px solid rgba(102,74,49,.08)!important;
+}
+.shop-tab-indicator{display:none!important}
+.shop-tab{
+  position:relative!important;
+  z-index:1!important;
+  width:100%!important;
+  min-width:0!important;
+  height:36px!important;
+  padding:0 10px!important;
+  border:1px solid transparent!important;
+  border-radius:12px!important;
+  background:rgba(255,255,255,.38)!important;
+  color:rgba(86,63,46,.62)!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:7px!important;
+  overflow:hidden!important;
+  font-size:10px!important;
+  font-weight:850!important;
+  line-height:1!important;
+  box-shadow:none!important;
+  transition:transform .14s ease,background .18s ease,color .18s ease,border-color .18s ease,box-shadow .18s ease!important;
+}
+.shop-tab span{
+  display:block!important;
+  min-width:0!important;
+  white-space:nowrap!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+}
+.shop-tab svg{
+  flex:0 0 auto!important;
+  width:17px!important;
+  height:17px!important;
+  fill:none!important;
+  stroke:currentColor!important;
+  stroke-width:1.8!important;
+}
+.shop-tab.active{
+  background:#f1f5e7!important;
+  color:#5f7338!important;
+  border-color:rgba(111,132,69,.17)!important;
+  box-shadow:0 3px 9px rgba(65,46,28,.07),inset 0 1px 0 rgba(255,255,255,.92)!important;
+}
+.shop-tab:active{transform:scale(.97)!important}
+.shop-tab[data-category="plants"].has-new::after{display:none!important;content:none!important}
+
+/* Variant picker and deletion are two separate actions. */
+.variant-head{align-items:flex-start!important}
+.variant-head-actions{
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  margin-left:10px;
+}
+.variant-head-actions .variant-close,
+.variant-delete{
+  position:static!important;
+  flex:0 0 auto;
+  width:36px!important;
+  height:36px!important;
+  margin:0!important;
+  padding:0!important;
+  border-radius:14px!important;
+  display:grid!important;
+  place-items:center!important;
+  touch-action:manipulation;
+}
+.variant-delete{
+  border:1px solid rgba(143,83,69,.10)!important;
+  background:rgba(143,83,69,.075)!important;
+  color:#8a5145!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.72)!important;
+}
+.variant-delete svg{
+  width:17px;
+  height:17px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.75;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  pointer-events:none;
+}
+.variant-delete:active{
+  transform:scale(.94)!important;
+  background:rgba(143,83,69,.14)!important;
+}
+.variant-head-actions .variant-close{
+  background:rgba(107,126,70,.09)!important;
+  color:#5f4835!important;
+}
+/* A picker must never show the old floating delete chip. */
+.stage.picker-open .global-delete-chip-floating{display:none!important}
+
+@media(max-width:360px){
+  .shop-tabs{gap:5px!important;padding:3px!important;min-height:42px!important}
+  .shop-tab{height:34px!important;padding:0 7px!important;font-size:9px!important;gap:5px!important}
+  .shop-tab svg{width:15px!important;height:15px!important}
+  .variant-head-actions{gap:5px;margin-left:6px}
+  .variant-head-actions .variant-close,.variant-delete{width:34px!important;height:34px!important;border-radius:13px!important}
+}
