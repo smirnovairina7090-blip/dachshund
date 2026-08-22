@@ -4,10 +4,10 @@
 
   const apply=dataUrl=>{
     const cssUrl=`url("${dataUrl}")`;
-    stage.style.setProperty('--motya-sheet',cssUrl);
-    document.documentElement.style.setProperty('--motya-sheet',cssUrl);
+    stage.style.setProperty('--motya-sheet',cssUrl,'important');
+    document.documentElement.style.setProperty('--motya-sheet',cssUrl,'important');
     document.querySelectorAll('.motya-sprite').forEach(el=>{
-      el.style.backgroundImage=cssUrl;
+      el.style.setProperty('background-image',cssUrl,'important');
     });
   };
 
@@ -15,10 +15,14 @@
     apply(dataUrl);
     const observer=new MutationObserver(()=>apply(dataUrl));
     observer.observe(stage,{subtree:true,childList:true});
-    setTimeout(()=>observer.disconnect(),15000);
+    let n=0;
+    const timer=setInterval(()=>{
+      apply(dataUrl);
+      if(++n>=20){clearInterval(timer);observer.disconnect()}
+    },250);
   };
 
-  fetch('motya-sheet.b64?v=2',{cache:'no-store'})
+  fetch('motya-sheet.b64?v=3',{cache:'no-store'})
     .then(r=>{
       if(!r.ok)throw new Error(`Motya sheet ${r.status}`);
       return r.text();
