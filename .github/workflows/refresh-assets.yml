@@ -73,6 +73,13 @@ jobs:
               print(name, im.size, (out/name).stat().st_size)
           PY
 
+      - name: Build Motya character sheet
+        run: |
+          test -s motya-sheet.b64
+          base64 -d motya-sheet.b64 > assets/motya-sheet.webp
+          file assets/motya-sheet.webp
+          test -s assets/motya-sheet.webp
+
       - name: Commit refreshed assets
         run: |
           git config user.name 'github-actions[bot]'
