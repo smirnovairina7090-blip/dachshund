@@ -1,16 +1,13 @@
 .motya-character{overflow:visible!important;min-height:1px!important;z-index:2600!important}
-.motya-character .motya-sprite,.motya-intro-dog .motya-sprite{--motya-flip:1;position:relative!important;display:block!important;width:100%!important;aspect-ratio:1/1!important;overflow:hidden!important;background:none!important;background-image:none!important;transform-origin:50% 78%}
-.motya-fallback-img,.motya-sheet-img{position:absolute!important;display:block!important;pointer-events:none!important;-webkit-user-drag:none!important;user-select:none!important}
-.motya-fallback-img{inset:0!important;width:100%!important;height:100%!important;object-fit:contain!important;opacity:1;transition:opacity .14s ease}
-.motya-sheet-img{width:300%!important;height:300%!important;max-width:none!important;max-height:none!important;object-fit:fill!important;left:calc(var(--motya-col,0) * -100%)!important;top:calc(var(--motya-row,0) * -100%)!important;opacity:0;transition:opacity .14s ease}
-.motya-sprite.sheet-ready .motya-sheet-img{opacity:1}
-.motya-sprite.sheet-ready .motya-fallback-img{opacity:0}
+.motya-character .motya-sprite,.motya-intro-dog .motya-sprite{--motya-flip:1;position:relative!important;display:block!important;width:100%!important;aspect-ratio:1/1!important;overflow:visible!important;background:none!important;background-image:none!important;transform-origin:50% 78%}
+.motya-direct-img{position:relative!important;display:block!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;object-fit:contain!important;left:auto!important;top:auto!important;margin:0!important;padding:0!important;border:0!important;opacity:1!important;visibility:visible!important;pointer-events:none!important;-webkit-user-drag:none!important;user-select:none!important}
 .motya-character.facing-left .motya-sprite{--motya-flip:-1}
 .motya-character[data-pose="idle"] .motya-sprite,.motya-intro-dog .motya-sprite{animation:motya-live-idle 2.35s ease-in-out infinite!important}
-.motya-character.walking .motya-sprite{animation:motya-live-walk .24s ease-in-out infinite alternate!important}
+.motya-character.walking .motya-sprite{animation:motya-live-walk .22s ease-in-out infinite alternate!important}
 .motya-character.sleeping .motya-sprite{animation:motya-live-sleep 2.4s ease-in-out infinite!important}
 .motya-character.happy-bounce .motya-sprite{animation:motya-live-play .42s ease-in-out infinite alternate!important}
 .motya-character.sad-mode .motya-sprite{animation:motya-live-sad 1.8s ease-in-out infinite!important;filter:saturate(.9) brightness(.97)}
+.motya-character.pose-swap .motya-direct-img{opacity:.2!important;transform:scale(.94);transition:opacity .14s ease,transform .14s ease}
 .motya-intro-dog{z-index:20!important}
 @keyframes motya-live-idle{0%,100%{transform:translateY(0) scaleX(var(--motya-flip)) scale(1)}50%{transform:translateY(-3px) scaleX(var(--motya-flip)) scale(1.012)}}
 @keyframes motya-live-walk{0%{transform:translateY(0) scaleX(var(--motya-flip))}100%{transform:translateY(-4px) scaleX(var(--motya-flip))}}
