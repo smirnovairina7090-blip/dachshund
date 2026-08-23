@@ -3,18 +3,31 @@
   const scene=document.getElementById('scene');
   if(!stage||!scene)return;
 
-  const VERSION='stable-motya-20260823-1';
+  const VERSION='png-motya-20260823-1';
   const FRAME_FILES={
-    idle:'assets/motya/idle.webp',
-    sit:'assets/motya/sit.webp',
-    sleep:'assets/motya/sleep.webp',
-    sad:'assets/motya/sad.webp'
+    idle:'assets/motya/idle.png',
+    sit:'assets/motya/sit.png',
+    sleep:'assets/motya/sleep.png',
+    sad:'assets/motya/sad.png',
+    play:'assets/motya/play.png',
+    walk1:'assets/motya/walk1.png',
+    walk2:'assets/motya/walk2.png',
+    walk3:'assets/motya/walk3.png',
+    walk4:'assets/motya/walk4.png'
   };
+  const WALK=['walk1','walk2','walk3','walk4'];
   const HOME={x:1120,y:748,w:230};
-  const state={...HOME,pose:'idle',busy:false,sleeping:false,sleepTimer:0};
-  const urlFor=name=>(FRAME_FILES[name]||FRAME_FILES.idle)+'?v='+VERSION;
+  const state={...HOME,pose:'idle',busy:false,sleeping:false,sleepTimer:0,walkTimer:0};
 
-  Object.values(FRAME_FILES).forEach(path=>{const img=new Image();img.decoding='async';img.src=path+'?v='+VERSION});
+  const urlFor=name=>(FRAME_FILES[name]||FRAME_FILES.idle)+'?v='+VERSION;
+  const frameStatus={};
+  const framesReady=Promise.allSettled(Object.entries(FRAME_FILES).map(([name,path])=>new Promise(resolve=>{
+    const img=new Image();
+    img.decoding='async';
+    img.onload=()=>{frameStatus[name]=true;resolve()};
+    img.onerror=()=>{frameStatus[name]=false;resolve()};
+    img.src=path+'?v='+VERSION;
+  })));
 
   function spriteMarkup(){
     return `<span class="motya-sprite" aria-hidden="true"><img class="motya-direct-img" src="${urlFor('idle')}" alt="" draggable="false"></span>`;
@@ -23,9 +36,10 @@
     if(!el)return;
     const img=el.querySelector('.motya-direct-img');
     if(!img)return;
-    const next=urlFor(name);
-    el.dataset.frame=name;
-    img.dataset.frameSrc=name;
+    const safeName=frameStatus[name]===false?'idle':name;
+    const next=urlFor(safeName);
+    el.dataset.frame=safeName;
+    img.dataset.frameSrc=safeName;
     img.onerror=()=>{img.onerror=null;img.src=urlFor('idle')};
     if(img.getAttribute('src')!==next)img.src=next;
   }
@@ -69,6 +83,11 @@
   function openActions(){if(state.busy||state.sleeping||stage.classList.contains('arrange-mode'))return;actions.classList.add('open');actions.setAttribute('aria-hidden','false')}
   function closeActions(){actions.classList.remove('open');actions.setAttribute('aria-hidden','true')}
 
+  function depthAt(y){
+    const t=Math.max(0,Math.min(1,(y-535)/(802-535)));
+    return .88+t*.20;
+  }
+
   function restSpot(){
     const chair=document.querySelector('#objects .item[data-id="armchair"]');
     const bed=document.querySelector('#objects .item[data-id="bed"]');
@@ -77,34 +96,55 @@
     if(usable(chair)){
       const x=parseFloat(chair.style.left)||760;
       const y=parseFloat(chair.style.top)||690;
-      // Отдельный якорь именно верхней зелёной поверхности пуфика.
+      const rawW=parseFloat(chair.style.width)||285;
+      const scaledW=rawW*depthAt(y);
+      // Пуфик находится в нижней правой части спрайта кресла.
+      // Якоря заданы долями его реального размера, поэтому едут вместе с мебелью.
       return{
-        walkX:x+42, walkY:y+20,
-        sleepX:x+36, sleepY:y-54, sleepW:94,
-        sitX:x+36, sitY:y-38, sitW:108
+        walkX:x+scaledW*.10,
+        walkY:y+scaledW*.045,
+        sleepX:x+scaledW*.115,
+        sleepY:y-scaledW*.235,
+        sleepW:scaledW*.305,
+        sitX:x+scaledW*.115,
+        sitY:y-scaledW*.165,
+        sitW:scaledW*.37
       };
     }
     if(usable(bed)){
       const x=parseFloat(bed.style.left)||1515;
       const y=parseFloat(bed.style.top)||710;
-      return{walkX:x-42,walkY:y+16,sleepX:x,sleepY:y-18,sleepW:148,sitX:x,sitY:y-8,sitW:154};
+      const rawW=parseFloat(bed.style.width)||220;
+      const scaledW=rawW*depthAt(y);
+      return{
+        walkX:x-scaledW*.18,walkY:y+scaledW*.07,
+        sleepX:x,sleepY:y-scaledW*.08,sleepW:scaledW*.68,
+        sitX:x,sitY:y-scaledW*.04,sitW:scaledW*.70
+      };
     }
     return{walkX:930,walkY:730,sleepX:930,sleepY:708,sleepW:160,sitX:930,sitY:724,sitW:174};
   }
 
-  function walkTo(x,y,duration=1650){
+  async function walkTo(x,y,duration=1650){
+    await framesReady;
     return new Promise(resolve=>{
+      clearInterval(state.walkTimer);
       const sx=state.x,sy=state.y,start=performance.now(),left=x<sx;
-      // Временно используем только чистый idle-спрайт. Никаких повреждённых walk-кадров.
-      setPose('idle');
       character.classList.add('walking');
       character.classList.toggle('facing-left',left);
+      let frame=0;
+      setPose(WALK[frame]);
+      state.walkTimer=setInterval(()=>{
+        frame=(frame+1)%WALK.length;
+        setPose(WALK[frame]);
+      },145);
       const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
       function step(now){
         const t=Math.min(1,(now-start)/duration),q=ease(t);
-        setPosition(sx+(x-sx)*q,sy+(y-sy)*q,225);
+        setPosition(sx+(x-sx)*q,sy+(y-sy)*q,218);
         if(t<1)requestAnimationFrame(step);
         else{
+          clearInterval(state.walkTimer);state.walkTimer=0;
           character.classList.remove('walking','facing-left');
           setPose('idle');
           resolve();
@@ -121,7 +161,7 @@
     say('Мотя идёт отдыхать…',1500);
     await walkTo(spot.walkX,spot.walkY,1750);
     character.classList.add('pose-swap');
-    await new Promise(r=>setTimeout(r,130));
+    await new Promise(r=>setTimeout(r,120));
     setPose('sleep');
     setPosition(spot.sleepX,spot.sleepY,spot.sleepW);
     character.classList.remove('pose-swap');
@@ -138,29 +178,40 @@
     state.sleeping=false;state.busy=true;
     character.classList.remove('sleeping');
     const spot=restSpot();
-    setPose('sit');setPosition(spot.sitX,spot.sitY,spot.sitW);
+    setPose('sit');
+    setPosition(spot.sitX,spot.sitY,spot.sitW);
     say(auto?'Мотя проснулась!':'Доброе утро, Мотя!',1500);
-    await new Promise(r=>setTimeout(r,900));
+    await new Promise(r=>setTimeout(r,950));
     await walkTo(HOME.x,HOME.y,1700);
     setPose('idle');setPosition(HOME.x,HOME.y,HOME.w);
     state.busy=false;
   }
 
-  function play(){
+  async function play(){
     if(state.busy||state.sleeping)return;
     state.busy=true;closeActions();
-    // Пока без проблемного play.webp: чистый спрайт + игровая анимация корпуса.
-    setPose('idle');
+    await framesReady;
+    setPose('play');
     character.classList.add('happy-bounce');
     say('Ура! Поиграем ♡',1800);
-    setTimeout(()=>{character.classList.remove('happy-bounce');setPose('idle');state.busy=false},2200);
+    setTimeout(()=>{
+      character.classList.remove('happy-bounce');
+      setPose('idle');
+      state.busy=false;
+    },2300);
   }
-  function mood(){
+  async function mood(){
     if(state.busy||state.sleeping)return;
     state.busy=true;closeActions();
-    setPose('sad');character.classList.add('sad-mode');
+    await framesReady;
+    setPose('sad');
+    character.classList.add('sad-mode');
     say('Я чуть-чуть скучаю. Погладишь меня?',2500);
-    setTimeout(()=>{character.classList.remove('sad-mode');setPose('idle');state.busy=false},3000);
+    setTimeout(()=>{
+      character.classList.remove('sad-mode');
+      setPose('idle');
+      state.busy=false;
+    },3000);
   }
 
   actions.addEventListener('click',e=>{
@@ -191,23 +242,30 @@
 
   async function enterCare(){
     state.busy=true;
+    await framesReady;
     setPosition(HOME.x-260,HOME.y,HOME.w);
     await walkTo(HOME.x,HOME.y,1450);
-    setPose('idle');setPosition(HOME.x,HOME.y,HOME.w);state.busy=false;
+    setPose('idle');setPosition(HOME.x,HOME.y,HOME.w);
+    state.busy=false;
     say('Нажми на Мотю - выберем занятие.',2200);
     setTimeout(openActions,260);
   }
   function closeIntro(care=false){
-    clearTimeout(timer);intro.classList.add('closing');stage.classList.remove('motya-intro-open');
-    setTimeout(()=>intro.remove(),350);if(care)setTimeout(enterCare,390);
+    clearTimeout(timer);
+    intro.classList.add('closing');stage.classList.remove('motya-intro-open');
+    setTimeout(()=>intro.remove(),350);
+    if(care)setTimeout(enterCare,390);
   }
   intro.addEventListener('click',e=>{
     if(e.target.closest('.motya-intro-close'))return closeIntro(false);
     const b=e.target.closest('[data-intro]');if(!b)return;
     if(b.dataset.intro==='care')return closeIntro(true);
-    if(b.dataset.intro==='breed'){copy.hidden=true;introActions.hidden=true;introDog.classList.add('small');breed.hidden=false}
-    else{breed.hidden=true;copy.hidden=false;introActions.hidden=false;introDog.classList.remove('small')}
+    if(b.dataset.intro==='breed'){
+      copy.hidden=true;introActions.hidden=true;introDog.classList.add('small');breed.hidden=false;
+    }else{
+      breed.hidden=true;copy.hidden=false;introActions.hidden=false;introDog.classList.remove('small');
+    }
   });
 
-  window.motyaGame={openActions,goSleep,wakeUp,setPose};
+  window.motyaGame={openActions,goSleep,wakeUp,setPose,frameFiles:FRAME_FILES};
 })();
