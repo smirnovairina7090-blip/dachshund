@@ -3,7 +3,7 @@
   const scene=document.getElementById('scene');
   if(!stage||!scene)return;
 
-  const VERSION='standalone-20260823-1';
+  const VERSION='standalone-20260823-2';
   const FRAME_FILES={
     idle:'assets/motya/idle.webp',
     sit:'assets/motya/sit.webp',
@@ -82,9 +82,32 @@
     const chair=document.querySelector('#objects .item[data-id="armchair"]');
     const bed=document.querySelector('#objects .item[data-id="bed"]');
     const usable=el=>el&&getComputedStyle(el).display!=='none'&&getComputedStyle(el).visibility!=='hidden'&&Number(getComputedStyle(el).opacity)>0.05;
-    if(usable(chair))return{x:parseFloat(chair.style.left)||760,walkY:718,sleepY:648,sleepW:158};
-    if(usable(bed))return{x:parseFloat(bed.style.left)||1515,walkY:720,sleepY:690,sleepW:168};
-    return{x:930,walkY:730,sleepY:724,sleepW:175};
+
+    if(usable(chair)){
+      const x=parseFloat(chair.style.left)||760;
+      const y=parseFloat(chair.style.top)||690;
+      return{
+        walkX:x-52,walkY:y+20,
+        sleepX:x+8,sleepY:y-96,sleepW:126,
+        sitX:x+6,sitY:y-72,sitW:142
+      };
+    }
+
+    if(usable(bed)){
+      const x=parseFloat(bed.style.left)||1515;
+      const y=parseFloat(bed.style.top)||710;
+      return{
+        walkX:x-42,walkY:y+16,
+        sleepX:x,sleepY:y-18,sleepW:148,
+        sitX:x,sitY:y-8,sitW:154
+      };
+    }
+
+    return{
+      walkX:930,walkY:730,
+      sleepX:930,sleepY:708,sleepW:160,
+      sitX:930,sitY:724,sitW:174
+    };
   }
 
   function walkTo(x,y,duration=1750){
@@ -119,11 +142,11 @@
     state.busy=true;closeActions();
     const spot=restSpot();
     say('Мотя идёт отдыхать…',1600);
-    await walkTo(spot.x,spot.walkY,1850);
+    await walkTo(spot.walkX,spot.walkY,1850);
     character.classList.add('pose-swap');
     await new Promise(r=>setTimeout(r,150));
     setPose('sleep');
-    setPosition(spot.x,spot.sleepY,spot.sleepW);
+    setPosition(spot.sleepX,spot.sleepY,spot.sleepW);
     character.classList.remove('pose-swap');
     character.classList.add('sleeping');
     state.sleeping=true;state.busy=false;
@@ -137,7 +160,7 @@
     clearTimeout(state.sleepTimer);state.sleeping=false;state.busy=true;
     character.classList.remove('sleeping');
     const spot=restSpot();
-    setPose('sit');setPosition(spot.x,spot.walkY,205);
+    setPose('sit');setPosition(spot.sitX,spot.sitY,spot.sitW);
     say(auto?'Мотя проснулась!':'Доброе утро, Мотя!',1600);
     await new Promise(r=>setTimeout(r,1100));
     await walkTo(HOME.x,HOME.y,1800);
