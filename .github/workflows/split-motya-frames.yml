@@ -1,5 +1,6 @@
 name: Split Motya frames
 
+# 2026-08-23: regenerate standalone animation frames
 on:
   push:
     branches: [cozy-room-v1]
