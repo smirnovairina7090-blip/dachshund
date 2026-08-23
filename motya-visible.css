@@ -1,1 +1,14 @@
-.motya-character{overflow:visible!important;min-height:1px!important}.motya-character .motya-sprite,.motya-intro-dog .motya-sprite{position:relative!important;display:block!important;width:100%!important;height:auto!important;aspect-ratio:auto!important;overflow:visible!important;background:none!important}.motya-character .motya-sprite>img,.motya-intro-dog .motya-sprite>img{position:relative!important;display:block!important;left:auto!important;top:auto!important;width:100%!important;height:auto!important;max-width:none!important;object-fit:contain!important;opacity:1!important;visibility:visible!important;transform:none!important}.motya-intro-dog{z-index:20!important}.motya-character{z-index:2600!important}
+.motya-character{overflow:visible!important;min-height:1px!important;z-index:2600!important}
+.motya-character .motya-sprite,.motya-intro-dog .motya-sprite{--motya-flip:1;position:relative!important;display:block!important;width:100%!important;aspect-ratio:1/1!important;overflow:hidden!important;background-image:url('assets/motya-sheet.webp?v=anim-20260823')!important;background-repeat:no-repeat!important;background-size:300% 300%!important;background-position:var(--motya-x,0%) var(--motya-y,0%)!important;transform-origin:50% 78%}
+.motya-character.facing-left .motya-sprite{--motya-flip:-1;transform:scaleX(-1)!important}
+.motya-character[data-pose="idle"] .motya-sprite,.motya-intro-dog .motya-sprite{animation:motya-live-idle 2.35s ease-in-out infinite!important}
+.motya-character.walking .motya-sprite{animation:motya-live-walk .24s ease-in-out infinite alternate!important}
+.motya-character.sleeping .motya-sprite{animation:motya-live-sleep 2.4s ease-in-out infinite!important}
+.motya-character.happy-bounce .motya-sprite{animation:motya-live-play .42s ease-in-out infinite alternate!important}
+.motya-character.sad-mode .motya-sprite{animation:motya-live-sad 1.8s ease-in-out infinite!important;filter:saturate(.9) brightness(.97)}
+.motya-intro-dog{z-index:20!important}
+@keyframes motya-live-idle{0%,100%{transform:translateY(0) scaleX(var(--motya-flip)) scale(1)}50%{transform:translateY(-3px) scaleX(var(--motya-flip)) scale(1.012)}}
+@keyframes motya-live-walk{0%{transform:translateY(0) scaleX(var(--motya-flip))}100%{transform:translateY(-4px) scaleX(var(--motya-flip))}}
+@keyframes motya-live-sleep{0%,100%{transform:scaleX(var(--motya-flip)) scale(1)}50%{transform:scaleX(var(--motya-flip)) scale(1.018) translateY(-2px)}}
+@keyframes motya-live-play{to{transform:translateY(-8px) scaleX(var(--motya-flip)) rotate(-1.5deg)}}
+@keyframes motya-live-sad{0%,100%{transform:translateY(0) scaleX(var(--motya-flip))}50%{transform:translateY(2px) scaleX(var(--motya-flip))}}
