@@ -1,0 +1,103 @@
+/* Coin economy UI. Keeps room/camera/furniture geometry untouched. */
+.coin-balance{
+  position:absolute;
+  z-index:5110;
+  right:170px;
+  top:max(12px,env(safe-area-inset-top));
+  min-width:72px;
+  height:40px;
+  padding:0 11px 0 8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  border:1px solid rgba(255,255,255,.68);
+  border-radius:20px;
+  background:rgba(255,250,241,.9);
+  color:#5f4938;
+  box-shadow:0 7px 20px rgba(55,31,16,.11),inset 0 1px 0 rgba(255,255,255,.88);
+  backdrop-filter:blur(16px) saturate(1.04);
+  -webkit-backdrop-filter:blur(16px) saturate(1.04);
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.01em;
+  pointer-events:none;
+  transform-origin:center;
+}
+.coin-balance-icon,.coin-price-icon{
+  display:inline-grid;
+  place-items:center;
+  flex:0 0 auto;
+  width:21px;
+  height:21px;
+  border-radius:50%;
+  color:#fff6d2;
+  background:linear-gradient(145deg,#e6b84f,#bf8126);
+  border:1px solid rgba(255,255,255,.68);
+  box-shadow:0 2px 5px rgba(103,63,20,.19),inset 0 1px 0 rgba(255,255,255,.48);
+  font-size:9px;
+  line-height:1;
+  text-shadow:0 1px 1px rgba(94,57,18,.22);
+}
+.coin-price-icon{width:15px;height:15px;font-size:6px;border-width:1px;box-shadow:0 1px 3px rgba(103,63,20,.14),inset 0 1px 0 rgba(255,255,255,.4)}
+.coin-balance.coin-changed{animation:coinBalanceSpend .42s cubic-bezier(.16,1,.3,1)}
+@keyframes coinBalanceSpend{0%{transform:scale(1)}34%{transform:scale(.92)}68%{transform:scale(1.07)}100%{transform:scale(1)}}
+
+.shop-wallet{
+  display:flex!important;
+  align-items:center;
+  gap:5px;
+  color:#795d35!important;
+}
+.shop-wallet strong{font-size:10px;color:#5b452f}
+
+.shop-price{
+  display:inline-flex!important;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  min-width:45px;
+  color:#725529!important;
+  background:rgba(216,175,87,.12)!important;
+}
+
+.shop-card-locked{
+  position:relative;
+  opacity:.48!important;
+  filter:saturate(.58) grayscale(.16)!important;
+  cursor:default!important;
+  background:rgba(239,237,231,.76)!important;
+  border-color:rgba(102,82,65,.08)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.66)!important;
+}
+.shop-card-locked .shop-thumb img{filter:grayscale(.18) saturate(.66) opacity(.84) drop-shadow(0 3px 3px rgba(62,36,18,.08))!important}
+.shop-card-locked .shop-name{color:rgba(74,61,51,.7)!important}
+.shop-card-locked .shop-price{color:rgba(92,73,48,.66)!important;background:rgba(111,100,83,.08)!important}
+.shop-card-locked .coin-price-icon{background:linear-gradient(145deg,#c5bca9,#9e927f);color:#f8f2e8;box-shadow:none}
+.shop-card-locked:active{transform:none!important;background:rgba(239,237,231,.76)!important;border-color:rgba(102,82,65,.08)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.66)!important}
+.shop-lock{
+  position:absolute;
+  z-index:4;
+  right:9px;
+  top:9px;
+  width:25px;
+  height:25px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  color:rgba(78,66,56,.63);
+  background:rgba(255,252,246,.86);
+  border:1px solid rgba(105,88,73,.1);
+  box-shadow:0 3px 8px rgba(65,45,28,.07);
+}
+.shop-lock svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+.stage.shop-open .coin-balance{opacity:.35}
+
+@media(max-width:410px){
+  .coin-balance{right:162px;min-width:66px;padding:0 9px 0 7px;font-size:11px}
+  .coin-balance-icon{width:19px;height:19px}
+}
+@media(max-width:360px){
+  .coin-balance{right:155px;min-width:61px;gap:5px;padding:0 8px 0 6px;font-size:10px}
+}

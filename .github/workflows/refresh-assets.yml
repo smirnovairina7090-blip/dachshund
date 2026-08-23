@@ -1,0 +1,90 @@
+name: Refresh high quality sprites
+
+on:
+  push:
+    branches: [cozy-room-v1]
+    paths:
+      - '.asset-refresh'
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cozy-room-v1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Download source sprite pack
+        run: |
+          python -m pip install --quiet gdown pillow
+          gdown '1GUE7PC0kerY5ZoLRYz1BF-m4gtzXpDwK' -O /tmp/taksa.zip
+          unzip -q /tmp/taksa.zip -d /tmp/taksa
+
+      - name: Build high quality WebP assets
+        run: |
+          python <<'PY'
+          from pathlib import Path
+          from PIL import Image
+
+          root = Path('/tmp/taksa')
+          out = Path('assets')
+          out.mkdir(exist_ok=True)
+
+          def find_name(fragment, folder=None):
+              base = root if folder is None else next(root.rglob(folder))
+              for p in base.rglob('*.png'):
+                  if fragment in p.name:
+                      return p
+              raise FileNotFoundError(fragment)
+
+          mapping = {
+              'room.webp': find_name('living_room_empty.png'),
+              'rug.webp': find_name('rug_oval_jute.png'),
+              'sofa.webp': find_name('sofa_beige_green.png'),
+              'stove.webp': find_name('stove_with_logs.png'),
+              'bookcase.webp': find_name('bookcase_with_plants.png'),
+              'armchair.webp': find_name('armchair_green.png'),
+              'table.webp': find_name('coffee_table_round.png'),
+              'garden.webp': find_name('garden_unit.png'),
+              'nightstand.webp': find_name('22_55_37 (1).png', 'furniture'),
+              'round_bed.webp': find_name('23_04_49 (1).png', 'furniture'),
+              'bed_wicker.webp': find_name('pet_bed_wicker.png', 'furniture'),
+              'bed_house.webp': find_name('23_04_49 (2).png', 'furniture'),
+              'plant.webp': find_name('22_55_37 (2).png', 'plants'),
+              'plant_alt1.webp': find_name('22_34_40 (2).png', 'plants'),
+              'plant_alt2.webp': find_name('22_34_41 (3).png', 'plants'),
+          }
+
+          for name, src in mapping.items():
+              im = Image.open(src)
+              if name != 'room.webp':
+                  max_side = 1400
+                  if max(im.size) > max_side:
+                      scale = max_side / max(im.size)
+                      im = im.resize((round(im.width*scale), round(im.height*scale)), Image.Resampling.LANCZOS)
+              im.save(out/name, 'WEBP', quality=95, method=6)
+              print(name, im.size, (out/name).stat().st_size)
+          PY
+
+      - name: Build Motya character sheet
+        run: |
+          test -s motya-sheet.b64
+          base64 -d motya-sheet.b64 > assets/motya-sheet.webp
+          file assets/motya-sheet.webp
+          test -s assets/motya-sheet.webp
+
+      - name: Commit refreshed assets
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- assets/*.webp
+          git diff --cached --quiet && exit 0
+          git commit -m 'Refresh high quality room sprites'
+          git push origin HEAD:cozy-room-v1
