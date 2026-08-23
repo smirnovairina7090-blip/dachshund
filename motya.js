@@ -160,7 +160,22 @@
   let i=0,timer=0;
   function typeNext(){if(i>=message.length){caret.classList.add('done');introActions.classList.add('ready');return}typeEl.textContent+=message[i++];timer=setTimeout(typeNext,26)}
   setTimeout(typeNext,350);
-  function closeIntro(care=false){clearTimeout(timer);intro.classList.add('closing');stage.classList.remove('motya-intro-open');setTimeout(()=>intro.remove(),350);if(care)setTimeout(()=>{say('Нажми на Мотю - выберем занятие.',2400);openActions()},450)}
+  async function enterCare(){
+    state.busy=true;
+    setPosition(HOME.x-260,HOME.y,HOME.w);
+    setPose('walk1');
+    await walkTo(HOME.x,HOME.y,1450);
+    setPose('idle');setPosition(HOME.x,HOME.y,HOME.w);
+    state.busy=false;
+    say('Нажми на Мотю - выберем занятие.',2400);
+    setTimeout(openActions,260);
+  }
+  function closeIntro(care=false){
+    clearTimeout(timer);
+    intro.classList.add('closing');stage.classList.remove('motya-intro-open');
+    setTimeout(()=>intro.remove(),350);
+    if(care)setTimeout(enterCare,390);
+  }
   intro.addEventListener('click',e=>{
     if(e.target.closest('.motya-intro-close'))return closeIntro(false);
     const b=e.target.closest('[data-intro]');if(!b)return;
