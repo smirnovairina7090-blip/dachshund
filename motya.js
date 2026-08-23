@@ -3,36 +3,20 @@
   const scene=document.getElementById('scene');
   if(!stage||!scene)return;
 
-  const FRAME_FILES={
-    idle:'assets/motya/idle.webp',
-    sit:'assets/motya/sit.webp',
-    sleep:'assets/motya/sleep.webp',
-    sad:'assets/motya/sad.webp',
-    play:'assets/motya/play.webp',
-    walk1:'assets/motya/walk1.webp',
-    walk2:'assets/motya/walk2.webp',
-    walk3:'assets/motya/walk3.webp',
-    walk4:'assets/motya/walk4.webp'
+  const FRAMES={
+    idle:[0,0],sit:[1,0],sleep:[2,0],sad:[0,1],play:[1,1],
+    walk1:[2,1],walk2:[0,2],walk3:[1,2],walk4:[2,2]
   };
-  const FALLBACK=FRAME_FILES.idle;
   const WALK=['walk1','walk2','walk3','walk4'];
   const HOME={x:1120,y:748,w:230};
   const state={...HOME,pose:'idle',busy:false,sleeping:false,sleepTimer:0,walkTimer:0};
 
-  function spriteMarkup(){
-    return `<span class="motya-sprite" aria-hidden="true"><img class="motya-direct-img" src="${FALLBACK}?v=standalone-1" alt="" draggable="false"></span>`;
-  }
-
+  function spriteMarkup(){return '<span class="motya-sprite" aria-hidden="true"></span>'}
   function setSprite(el,name){
-    const img=el?.querySelector('.motya-direct-img');
-    if(!img)return;
-    const wanted=FRAME_FILES[name]||FALLBACK;
-    img.dataset.pose=name;
-    img.onerror=()=>{
-      img.onerror=null;
-      if(!img.src.includes('/idle.webp')) img.src=FALLBACK+'?v=standalone-1';
-    };
-    img.src=wanted+'?v=standalone-1';
+    if(!el)return;
+    const [c,r]=FRAMES[name]||FRAMES.idle;
+    el.style.setProperty('--motya-x',(c*50)+'%');
+    el.style.setProperty('--motya-y',(r*50)+'%');
     el.dataset.frame=name;
   }
 
@@ -59,7 +43,7 @@
   const actions=document.createElement('div');
   actions.className='motya-actions';
   actions.setAttribute('aria-hidden','true');
-  actions.innerHTML=`<div class="motya-actions-title"><span class="motya-paw">✦</span><b>Чем займёмся?</b></div><div class="motya-actions-row"><button type="button" data-action="sleep"><span>☾</span><b>Отдохнуть</b></button><button type="button" data-action="play"><span>♡</span><b>Поиграть</b></button><button type="button" data-action="mood"><span>☺</span><b>Как ты?</b></button></div>`;
+  actions.innerHTML='<div class="motya-actions-title"><span class="motya-paw">✦</span><b>Чем займёмся?</b></div><div class="motya-actions-row"><button type="button" data-action="sleep"><span>☾</span><b>Отдохнуть</b></button><button type="button" data-action="play"><span>♡</span><b>Поиграть</b></button><button type="button" data-action="mood"><span>☺</span><b>Как ты?</b></button></div>';
   stage.appendChild(actions);
 
   const toast=document.createElement('div');
@@ -86,15 +70,22 @@
       const sx=state.x,sy=state.y,start=performance.now(),left=x<sx;
       character.classList.add('walking');
       character.classList.toggle('facing-left',left);
-      setPose('walk1');
       let frame=0;
-      state.walkTimer=setInterval(()=>{frame=(frame+1)%WALK.length;setSprite(sprite,WALK[frame])},135);
+      setPose(WALK[frame]);
+      state.walkTimer=setInterval(()=>{
+        frame=(frame+1)%WALK.length;
+        setPose(WALK[frame]);
+      },145);
       const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
       function step(now){
         const t=Math.min(1,(now-start)/duration),q=ease(t);
         setPosition(sx+(x-sx)*q,sy+(y-sy)*q,225);
         if(t<1)requestAnimationFrame(step);
-        else{clearInterval(state.walkTimer);state.walkTimer=0;character.classList.remove('walking','facing-left');resolve()}
+        else{
+          clearInterval(state.walkTimer);state.walkTimer=0;
+          character.classList.remove('walking','facing-left');
+          resolve();
+        }
       }
       requestAnimationFrame(step);
     });
@@ -141,14 +132,24 @@
     setTimeout(()=>{character.classList.remove('sad-mode');setPose('idle');state.busy=false},3000);
   }
 
-  actions.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(!b)return;if(b.dataset.action==='sleep')goSleep();else if(b.dataset.action==='play')play();else mood()});
-  character.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(state.sleeping)return wakeUp(false);if(state.busy)return;actions.classList.contains('open')?closeActions():openActions()});
+  actions.addEventListener('click',e=>{
+    const b=e.target.closest('[data-action]');if(!b)return;
+    if(b.dataset.action==='sleep')goSleep();
+    else if(b.dataset.action==='play')play();
+    else mood();
+  });
+  character.addEventListener('click',e=>{
+    e.preventDefault();e.stopPropagation();
+    if(state.sleeping)return wakeUp(false);
+    if(state.busy)return;
+    actions.classList.contains('open')?closeActions():openActions();
+  });
   document.getElementById('arrange')?.addEventListener('click',closeActions);
 
   const intro=document.createElement('section');
   intro.className='motya-intro';
   intro.setAttribute('aria-label','Знакомство с Мотей');
-  intro.innerHTML=`<div class="motya-intro-card"><button class="motya-intro-close" type="button" aria-label="Закрыть знакомство">×</button><div class="motya-intro-dog">${spriteMarkup()}</div><div class="motya-intro-copy"><span class="motya-kicker">Твой цифровой питомец</span><div class="motya-type" aria-live="polite"></div><span class="motya-caret" aria-hidden="true"></span></div><div class="motya-intro-actions"><button type="button" data-intro="breed" class="secondary">Узнать о таксах</button><button type="button" data-intro="care" class="primary">Позаботиться о Моте</button></div><div class="motya-breed" hidden><b>Три вещи о таксах</b><p><span>01</span>Таксы обожают нюхать, искать и копать - это наследие норной охоты.</p><p><span>02</span>Длинную спину важно беречь от лишних прыжков и поддерживать мышцы.</p><p><span>03</span>Таксам полезны задачи для головы: поиск лакомств, команды и игры.</p><button type="button" data-intro="back">Вернуться к Моте</button></div></div>`;
+  intro.innerHTML='<div class="motya-intro-card"><button class="motya-intro-close" type="button" aria-label="Закрыть знакомство">×</button><div class="motya-intro-dog">'+spriteMarkup()+'</div><div class="motya-intro-copy"><span class="motya-kicker">Твой цифровой питомец</span><div class="motya-type" aria-live="polite"></div><span class="motya-caret" aria-hidden="true"></span></div><div class="motya-intro-actions"><button type="button" data-intro="breed" class="secondary">Узнать о таксах</button><button type="button" data-intro="care" class="primary">Позаботиться о Моте</button></div><div class="motya-breed" hidden><b>Три вещи о таксах</b><p><span>01</span>Таксы обожают нюхать, искать и копать - это наследие норной охоты.</p><p><span>02</span>Длинную спину важно беречь от лишних прыжков и поддерживать мышцы.</p><p><span>03</span>Таксам полезны задачи для головы: поиск лакомств, команды и игры.</p><button type="button" data-intro="back">Вернуться к Моте</button></div></div>';
   stage.appendChild(intro);
   stage.classList.add('motya-intro-open');
   const introSprite=intro.querySelector('.motya-sprite');
@@ -164,8 +165,11 @@
     if(e.target.closest('.motya-intro-close'))return closeIntro(false);
     const b=e.target.closest('[data-intro]');if(!b)return;
     if(b.dataset.intro==='care')return closeIntro(true);
-    if(b.dataset.intro==='breed'){copy.hidden=true;introActions.hidden=true;introDog.classList.add('small');breed.hidden=false}
-    else{breed.hidden=true;copy.hidden=false;introActions.hidden=false;introDog.classList.remove('small')}
+    if(b.dataset.intro==='breed'){
+      copy.hidden=true;introActions.hidden=true;introDog.classList.add('small');breed.hidden=false;
+    }else{
+      breed.hidden=true;copy.hidden=false;introActions.hidden=false;introDog.classList.remove('small');
+    }
   });
 
   window.motyaGame={openActions,goSleep,wakeUp,setPose};
