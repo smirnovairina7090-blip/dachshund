@@ -1,5 +1,6 @@
 name: Upscale Motya PNG frames
 
+# Rebuild character frames at a fixed high resolution so mobile browsers never upscale tiny animation assets.
 on:
   push:
     branches: [cozy-room-v1]
@@ -21,7 +22,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install pillow
+      - run: pip install pillow numpy
       - name: Rebuild high resolution frames
         run: |
           python - <<'PY'
