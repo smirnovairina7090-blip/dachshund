@@ -3,7 +3,7 @@
   const scene=document.getElementById('scene');
   if(!stage||!scene)return;
 
-  const VERSION='png-motya-20260823-1';
+  const VERSION='motya-scale-crisp-20260823-1';
   const FRAME_FILES={
     idle:'assets/motya/idle.png',
     sit:'assets/motya/sit.png',
@@ -16,7 +16,9 @@
     walk4:'assets/motya/walk4.png'
   };
   const WALK=['walk1','walk2','walk3','walk4'];
-  const HOME={x:1120,y:748,w:230};
+  const CHARACTER_W=272;
+  const WALK_W=272;
+  const HOME={x:1120,y:748,w:CHARACTER_W};
   const state={...HOME,pose:'idle',busy:false,sleeping:false,sleepTimer:0,walkTimer:0};
 
   const urlFor=name=>(FRAME_FILES[name]||FRAME_FILES.idle)+'?v='+VERSION;
@@ -54,11 +56,14 @@
   const sprite=character.querySelector('.motya-sprite');
 
   function setPosition(x,y,w=state.w){
-    state.x=x;state.y=y;state.w=w;
-    character.style.left=x+'px';
-    character.style.top=y+'px';
-    character.style.width=w+'px';
-    character.style.zIndex=String(2600+Math.round(y));
+    const px=Math.round(x);
+    const py=Math.round(y);
+    const pw=Math.round(w);
+    state.x=px;state.y=py;state.w=pw;
+    character.style.left=px+'px';
+    character.style.top=py+'px';
+    character.style.width=pw+'px';
+    character.style.zIndex=String(2600+py);
   }
   function setPose(name){
     state.pose=name;
@@ -98,17 +103,16 @@
       const y=parseFloat(chair.style.top)||690;
       const rawW=parseFloat(chair.style.width)||285;
       const scaledW=rawW*depthAt(y);
-      // Пуфик находится в нижней правой части спрайта кресла.
-      // Якоря заданы долями его реального размера, поэтому едут вместе с мебелью.
       return{
         walkX:x+scaledW*.10,
         walkY:y+scaledW*.045,
-        sleepX:x+scaledW*.115,
+        // Центр зелёного пуфика. Размер сна увеличен, но нижний якорь оставлен на поверхности.
+        sleepX:x+scaledW*.165,
         sleepY:y-scaledW*.235,
-        sleepW:scaledW*.305,
-        sitX:x+scaledW*.115,
-        sitY:y-scaledW*.165,
-        sitW:scaledW*.37
+        sleepW:scaledW*.52,
+        sitX:x+scaledW*.15,
+        sitY:y-scaledW*.17,
+        sitW:scaledW*.48
       };
     }
     if(usable(bed)){
@@ -118,11 +122,11 @@
       const scaledW=rawW*depthAt(y);
       return{
         walkX:x-scaledW*.18,walkY:y+scaledW*.07,
-        sleepX:x,sleepY:y-scaledW*.08,sleepW:scaledW*.68,
-        sitX:x,sitY:y-scaledW*.04,sitW:scaledW*.70
+        sleepX:x,sleepY:y-scaledW*.08,sleepW:scaledW*.82,
+        sitX:x,sitY:y-scaledW*.04,sitW:scaledW*.76
       };
     }
-    return{walkX:930,walkY:730,sleepX:930,sleepY:708,sleepW:160,sitX:930,sitY:724,sitW:174};
+    return{walkX:930,walkY:730,sleepX:930,sleepY:708,sleepW:190,sitX:930,sitY:724,sitW:185};
   }
 
   async function walkTo(x,y,duration=1650){
@@ -134,19 +138,21 @@
       character.classList.toggle('facing-left',left);
       let frame=0;
       setPose(WALK[frame]);
+      setPosition(sx,sy,WALK_W);
       state.walkTimer=setInterval(()=>{
         frame=(frame+1)%WALK.length;
         setPose(WALK[frame]);
-      },145);
+      },155);
       const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
       function step(now){
         const t=Math.min(1,(now-start)/duration),q=ease(t);
-        setPosition(sx+(x-sx)*q,sy+(y-sy)*q,218);
+        setPosition(sx+(x-sx)*q,sy+(y-sy)*q,WALK_W);
         if(t<1)requestAnimationFrame(step);
         else{
           clearInterval(state.walkTimer);state.walkTimer=0;
           character.classList.remove('walking','facing-left');
           setPose('idle');
+          setPosition(x,y,CHARACTER_W);
           resolve();
         }
       }
@@ -192,11 +198,13 @@
     state.busy=true;closeActions();
     await framesReady;
     setPose('play');
+    setPosition(state.x,state.y,CHARACTER_W);
     character.classList.add('happy-bounce');
     say('Ура! Поиграем ♡',1800);
     setTimeout(()=>{
       character.classList.remove('happy-bounce');
       setPose('idle');
+      setPosition(state.x,state.y,CHARACTER_W);
       state.busy=false;
     },2300);
   }
@@ -205,11 +213,13 @@
     state.busy=true;closeActions();
     await framesReady;
     setPose('sad');
+    setPosition(state.x,state.y,CHARACTER_W);
     character.classList.add('sad-mode');
     say('Я чуть-чуть скучаю. Погладишь меня?',2500);
     setTimeout(()=>{
       character.classList.remove('sad-mode');
       setPose('idle');
+      setPosition(state.x,state.y,CHARACTER_W);
       state.busy=false;
     },3000);
   }
@@ -243,8 +253,8 @@
   async function enterCare(){
     state.busy=true;
     await framesReady;
-    setPosition(HOME.x-260,HOME.y,HOME.w);
-    await walkTo(HOME.x,HOME.y,1450);
+    setPosition(HOME.x-310,HOME.y,CHARACTER_W);
+    await walkTo(HOME.x,HOME.y,1550);
     setPose('idle');setPosition(HOME.x,HOME.y,HOME.w);
     state.busy=false;
     say('Нажми на Мотю - выберем занятие.',2200);
