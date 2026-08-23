@@ -1,0 +1,56 @@
+name: Build Motya PNG assets
+
+on:
+  push:
+    branches: [cozy-room-v1]
+    paths:
+      - '.github/workflows/build-motya-png.yml'
+      - 'assets/motya/*.webp'
+
+permissions:
+  contents: write
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cozy-room-v1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pillow
+      - name: Convert Motya frames to clean PNG
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+
+          root = Path('assets/motya')
+          names = ['idle','sit','sleep','sad','play','walk1','walk2','walk3','walk4']
+          for name in names:
+              src = root / f'{name}.webp'
+              dst = root / f'{name}.png'
+              im = Image.open(src).convert('RGBA')
+              px = []
+              for r,g,b,a in im.getdata():
+                  if a == 0:
+                      px.append((0,0,0,0))
+                  else:
+                      px.append((r,g,b,a))
+              im.putdata(px)
+              im.save(dst, 'PNG', optimize=True)
+              print(name, im.size)
+          PY
+      - name: Commit PNG frames
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/motya/*.png
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "Build clean PNG frames for Motya"
+            git push origin HEAD:cozy-room-v1
+          fi
