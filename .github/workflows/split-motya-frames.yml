@@ -1,0 +1,46 @@
+name: Split Motya frames
+
+on:
+  push:
+    branches: [cozy-room-v1]
+    paths:
+      - '.github/workflows/split-motya-frames.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cozy-room-v1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pillow
+      - name: Split sheet into standalone frames
+        run: |
+          python - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          src=Image.open('assets/motya-sheet.webp').convert('RGBA')
+          if src.size != (480,480):
+              raise SystemExit(f'Unexpected Motya sheet size: {src.size}')
+          out=Path('assets/motya'); out.mkdir(parents=True,exist_ok=True)
+          grid=[['idle','sit','sleep'],['sad','play','walk1'],['walk2','walk3','walk4']]
+          for r,row in enumerate(grid):
+              for c,name in enumerate(row):
+                  frame=src.crop((c*160,r*160,(c+1)*160,(r+1)*160))
+                  frame.save(out/f'{name}.webp','WEBP',lossless=True,method=6)
+          PY
+      - name: Commit standalone frames
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add assets/motya/*.webp
+          git diff --cached --quiet && exit 0
+          git commit -m "Split Motya animation into standalone frames"
+          git push origin HEAD:cozy-room-v1
