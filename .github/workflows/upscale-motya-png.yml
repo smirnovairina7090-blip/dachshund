@@ -1,0 +1,54 @@
+name: Upscale Motya PNG frames
+
+on:
+  push:
+    branches: [cozy-room-v1]
+    paths:
+      - '.github/workflows/upscale-motya-png.yml'
+      - 'assets/motya/*.png'
+
+permissions:
+  contents: write
+
+jobs:
+  upscale:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cozy-room-v1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pillow
+      - name: Rebuild high resolution frames
+        run: |
+          python - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          import numpy as np
+
+          root = Path('assets/motya')
+          for p in sorted(root.glob('*.png')):
+              im = Image.open(p).convert('RGBA')
+              if im.size != (512, 512):
+                  resample = Image.Resampling.NEAREST if p.stem.startswith('walk') else Image.Resampling.LANCZOS
+                  im = im.resize((512, 512), resample)
+              a = np.array(im)
+              a[a[:, :, 3] < 4, 3] = 0
+              a[a[:, :, 3] == 0, :3] = 0
+              Image.fromarray(a, 'RGBA').save(p, optimize=True, compress_level=9)
+              print(p.name, Image.open(p).size)
+          PY
+      - name: Commit rebuilt frames
+        run: |
+          if git diff --quiet -- assets/motya/*.png; then
+            echo 'No frame changes'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/motya/*.png
+          git commit -m 'Upscale Motya PNG animation frames'
+          git push
