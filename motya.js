@@ -3,7 +3,7 @@
   const scene=document.getElementById('scene');
   if(!stage||!scene)return;
 
-  const VERSION='standalone-20260823-3';
+  const VERSION='cleanwalk-20260823-1';
   const FRAME_FILES={
     idle:'assets/motya/idle.webp',
     sit:'assets/motya/sit.webp',
@@ -18,50 +18,10 @@
   const WALK=['walk1','walk2','walk3','walk4'];
   const HOME={x:1120,y:748,w:230};
   const state={...HOME,pose:'idle',busy:false,sleeping:false,sleepTimer:0,walkTimer:0};
-  const prepared={};
 
   const urlFor=name=>(FRAME_FILES[name]||FRAME_FILES.idle)+'?v='+VERSION;
+  Object.values(FRAME_FILES).forEach(path=>{const img=new Image();img.decoding='async';img.src=path+'?v='+VERSION});
 
-  function loadImage(src){
-    return new Promise((resolve,reject)=>{
-      const im=new Image();
-      im.decoding='async';
-      im.onload=()=>resolve(im);
-      im.onerror=reject;
-      im.src=src;
-    });
-  }
-
-  async function prepareWalkFrame(name){
-    const im=await loadImage(urlFor(name));
-    const canvas=document.createElement('canvas');
-    canvas.width=im.naturalWidth||256;
-    canvas.height=im.naturalHeight||256;
-    const ctx=canvas.getContext('2d',{alpha:true,willReadFrequently:true});
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    ctx.drawImage(im,0,0);
-    const data=ctx.getImageData(0,0,canvas.width,canvas.height);
-    const p=data.data;
-    for(let i=0;i<p.length;i+=4){
-      const r=p[i],g=p[i+1],b=p[i+2],a=p[i+3];
-      if(a<24){p[i+3]=0;continue}
-      if(a<175&&r<48&&g<48&&b<48){p[i+3]=0;continue}
-      if(a<70)p[i+3]=Math.min(255,Math.round(a*1.35));
-    }
-    ctx.putImageData(data,0,0);
-    prepared[name]=canvas.toDataURL('image/png');
-  }
-
-  const frameReady=Promise.all([
-    ...Object.entries(FRAME_FILES).filter(([name])=>!WALK.includes(name)).map(async([name])=>{
-      try{await loadImage(urlFor(name));prepared[name]=urlFor(name)}catch{prepared[name]=urlFor('idle')}
-    }),
-    ...WALK.map(async name=>{
-      try{await prepareWalkFrame(name)}catch{prepared[name]=urlFor(name)}
-    })
-  ]).catch(()=>{});
-
-  function frameSrc(name){return prepared[name]||urlFor(name)}
   function spriteMarkup(){
     return `<span class="motya-sprite" aria-hidden="true"><img class="motya-direct-img" src="${urlFor('idle')}" alt="" draggable="false"></span>`;
   }
@@ -71,8 +31,8 @@
     if(!img)return;
     el.dataset.frame=name;
     img.dataset.frameSrc=name;
-    const next=frameSrc(name);
-    img.onerror=()=>{img.onerror=null;if(name!=='idle')img.src=frameSrc('idle')};
+    const next=urlFor(name);
+    img.onerror=()=>{img.onerror=null;if(name!=='idle')img.src=urlFor('idle')};
     if(img.getAttribute('src')!==next)img.setAttribute('src',next);
   }
 
@@ -118,9 +78,9 @@
       const x=parseFloat(chair.style.left)||760;
       const y=parseFloat(chair.style.top)||690;
       return{
-        walkX:x+72,walkY:y+22,
-        sleepX:x+78,sleepY:y-28,sleepW:112,
-        sitX:x+76,sitY:y-16,sitW:126
+        walkX:x+60,walkY:y+20,
+        sleepX:x+54,sleepY:y-69,sleepW:104,
+        sitX:x+54,sitY:y-49,sitW:118
       };
     }
     if(usable(bed)){
@@ -131,14 +91,13 @@
     return{walkX:930,walkY:730,sleepX:930,sleepY:708,sleepW:160,sitX:930,sitY:724,sitW:174};
   }
 
-  async function walkTo(x,y,duration=1750){
-    await frameReady;
+  function walkTo(x,y,duration=1750){
     return new Promise(resolve=>{
       clearInterval(state.walkTimer);
       const sx=state.x,sy=state.y,start=performance.now(),left=x<sx;
       character.classList.add('walking');character.classList.toggle('facing-left',left);
       let frame=0;setPose(WALK[frame]);
-      state.walkTimer=setInterval(()=>{frame=(frame+1)%WALK.length;setPose(WALK[frame])},180);
+      state.walkTimer=setInterval(()=>{frame=(frame+1)%WALK.length;setPose(WALK[frame])},170);
       const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
       function step(now){
         const t=Math.min(1,(now-start)/duration),q=ease(t);
@@ -171,13 +130,13 @@
     setPose('idle');setPosition(HOME.x,HOME.y,HOME.w);state.busy=false;
   }
 
-  async function play(){
-    if(state.busy||state.sleeping)return;state.busy=true;closeActions();await frameReady;
+  function play(){
+    if(state.busy||state.sleeping)return;state.busy=true;closeActions();
     setPose('play');character.classList.add('happy-bounce');say('Ура! Поиграем ♡',1900);
     setTimeout(()=>{character.classList.remove('happy-bounce');setPose('idle');state.busy=false},2400);
   }
-  async function mood(){
-    if(state.busy||state.sleeping)return;state.busy=true;closeActions();await frameReady;
+  function mood(){
+    if(state.busy||state.sleeping)return;state.busy=true;closeActions();
     setPose('sad');character.classList.add('sad-mode');say('Я чуть-чуть скучаю. Погладишь меня?',2600);
     setTimeout(()=>{character.classList.remove('sad-mode');setPose('idle');state.busy=false},3200);
   }
@@ -197,7 +156,7 @@
   setTimeout(typeNext,350);
 
   async function enterCare(){
-    state.busy=true;await frameReady;setPosition(HOME.x-260,HOME.y,HOME.w);setPose('walk1');
+    state.busy=true;setPosition(HOME.x-260,HOME.y,HOME.w);setPose('walk1');
     await walkTo(HOME.x,HOME.y,1550);setPose('idle');setPosition(HOME.x,HOME.y,HOME.w);state.busy=false;
     say('Нажми на Мотю - выберем занятие.',2400);setTimeout(openActions,260);
   }
