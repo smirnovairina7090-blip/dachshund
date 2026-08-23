@@ -10,15 +10,49 @@
   const WALK=['walk1','walk2','walk3','walk4'];
   const HOME={x:1120,y:748,w:230};
   const state={...HOME,pose:'idle',busy:false,sleeping:false,sleepTimer:0,walkTimer:0};
+  let sheetData='';
 
-  function spriteMarkup(){return '<span class="motya-sprite" aria-hidden="true"></span>'}
+  function spriteMarkup(){
+    return '<span class="motya-sprite" aria-hidden="true"><img class="motya-fallback-img" src="assets/motya/idle.webp?v=safe-3" alt="" draggable="false"><img class="motya-sheet-img" alt="" draggable="false"></span>';
+  }
+
+  function hydrateSprite(el){
+    if(!el||!sheetData)return;
+    const img=el.querySelector('.motya-sheet-img');
+    if(!img)return;
+    if(img.src!==sheetData)img.src=sheetData;
+    el.classList.add('sheet-ready');
+  }
+
   function setSprite(el,name){
     if(!el)return;
     const [c,r]=FRAMES[name]||FRAMES.idle;
-    el.style.setProperty('--motya-x',(c*50)+'%');
-    el.style.setProperty('--motya-y',(r*50)+'%');
+    el.style.setProperty('--motya-col',String(c));
+    el.style.setProperty('--motya-row',String(r));
     el.dataset.frame=name;
+    hydrateSprite(el);
   }
+
+  async function loadSheet(){
+    try{
+      const response=await fetch('motya-sheet.b64?v=safe-3',{cache:'no-store'});
+      if(!response.ok)throw new Error('sheet b64 '+response.status);
+      const raw=(await response.text()).replace(/\s+/g,'');
+      if(!raw.startsWith('UklG'))throw new Error('invalid webp data');
+      const data='data:image/webp;base64,'+raw;
+      await new Promise((resolve,reject)=>{
+        const probe=new Image();
+        probe.onload=()=>resolve();
+        probe.onerror=reject;
+        probe.src=data;
+      });
+      sheetData=data;
+      document.querySelectorAll('.motya-sprite').forEach(hydrateSprite);
+    }catch(err){
+      console.warn('Motya animation sheet unavailable; keeping safe idle image',err);
+    }
+  }
+  loadSheet();
 
   const character=document.createElement('button');
   character.id='motyaCharacter';
@@ -160,6 +194,7 @@
   let i=0,timer=0;
   function typeNext(){if(i>=message.length){caret.classList.add('done');introActions.classList.add('ready');return}typeEl.textContent+=message[i++];timer=setTimeout(typeNext,26)}
   setTimeout(typeNext,350);
+
   async function enterCare(){
     state.busy=true;
     setPosition(HOME.x-260,HOME.y,HOME.w);
