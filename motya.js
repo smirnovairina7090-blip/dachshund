@@ -3,60 +3,41 @@
   const scene=document.getElementById('scene');
   if(!stage||!scene)return;
 
-  const FRAME_COORDS={
-    idle:[0,0],sit:[1,0],sleep:[2,0],sad:[0,1],play:[1,1],
-    walk1:[2,1],walk2:[0,2],walk3:[1,2],walk4:[2,2]
+  const VERSION='standalone-20260823-1';
+  const FRAME_FILES={
+    idle:'assets/motya/idle.webp',
+    sit:'assets/motya/sit.webp',
+    sleep:'assets/motya/sleep.webp',
+    sad:'assets/motya/sad.webp',
+    play:'assets/motya/play.webp',
+    walk1:'assets/motya/walk1.webp',
+    walk2:'assets/motya/walk2.webp',
+    walk3:'assets/motya/walk3.webp',
+    walk4:'assets/motya/walk4.webp'
   };
   const WALK=['walk1','walk2','walk3','walk4'];
-  const FALLBACK='assets/motya/idle.webp?v=frames-5';
-  const SHEET='assets/motya/motya-spritesheet.webp?v=frames-5';
   const HOME={x:1120,y:748,w:230};
   const state={...HOME,pose:'idle',busy:false,sleeping:false,sleepTimer:0,walkTimer:0};
-  const frameData={idle:FALLBACK};
-  let framesReady=false;
+
+  const urlFor=name=>(FRAME_FILES[name]||FRAME_FILES.idle)+'?v='+VERSION;
+  Object.values(FRAME_FILES).forEach(path=>{const img=new Image();img.src=path+'?v='+VERSION});
 
   function spriteMarkup(){
-    return `<span class="motya-sprite" aria-hidden="true"><img class="motya-direct-img" src="${FALLBACK}" alt="" draggable="false"></span>`;
+    return `<span class="motya-sprite" aria-hidden="true"><img class="motya-direct-img" src="${urlFor('idle')}" alt="" draggable="false"></span>`;
   }
-
-  function applyFrame(el,name){
+  function setSprite(el,name){
     if(!el)return;
-    el.dataset.frame=name;
     const img=el.querySelector('.motya-direct-img');
     if(!img)return;
-    const src=frameData[name]||FALLBACK;
+    el.dataset.frame=name;
     img.dataset.frameSrc=name;
-    if(img.getAttribute('src')!==src)img.setAttribute('src',src);
+    const next=urlFor(name);
+    img.onerror=()=>{
+      img.onerror=null;
+      if(name!=='idle')img.src=urlFor('idle');
+    };
+    if(img.getAttribute('src')!==next)img.setAttribute('src',next);
   }
-
-  async function buildFrames(){
-    try{
-      const sheet=await new Promise((resolve,reject)=>{
-        const im=new Image();
-        im.onload=()=>resolve(im);
-        im.onerror=()=>reject(new Error('Cannot load Motya sprite sheet'));
-        im.src=SHEET;
-      });
-      const sw=sheet.naturalWidth,sh=sheet.naturalHeight;
-      if(!sw||!sh||sw%3!==0||sh%3!==0)throw new Error(`Unexpected Motya sheet size ${sw}x${sh}`);
-      const fw=sw/3,fh=sh/3;
-      for(const [name,[col,row]] of Object.entries(FRAME_COORDS)){
-        const canvas=document.createElement('canvas');
-        canvas.width=fw;canvas.height=fh;
-        const ctx=canvas.getContext('2d',{alpha:true});
-        ctx.clearRect(0,0,fw,fh);
-        ctx.drawImage(sheet,col*fw,row*fh,fw,fh,0,0,fw,fh);
-        frameData[name]=canvas.toDataURL('image/webp',0.96);
-      }
-      framesReady=true;
-      document.querySelectorAll('.motya-sprite').forEach(el=>applyFrame(el,el.dataset.frame||'idle'));
-      Object.values(frameData).forEach(src=>{const im=new Image();im.src=src});
-      console.info('Motya frames ready',sw,sh,Object.keys(frameData));
-    }catch(err){
-      console.error('Motya frames unavailable',err);
-    }
-  }
-  buildFrames();
 
   const character=document.createElement('button');
   character.id='motyaCharacter';
@@ -77,7 +58,7 @@
   function setPose(name){
     state.pose=name;
     character.dataset.pose=name;
-    applyFrame(sprite,name);
+    setSprite(sprite,name);
   }
   setPosition(HOME.x,HOME.y,HOME.w);
   setPose('idle');
@@ -89,7 +70,9 @@
   stage.appendChild(actions);
 
   const toast=document.createElement('div');
-  toast.className='motya-toast';toast.setAttribute('aria-live','polite');stage.appendChild(toast);
+  toast.className='motya-toast';
+  toast.setAttribute('aria-live','polite');
+  stage.appendChild(toast);
   let toastTimer=0;
   function say(text,ms=2200){clearTimeout(toastTimer);toast.textContent=text;toast.classList.add('show');toastTimer=setTimeout(()=>toast.classList.remove('show'),ms)}
   function openActions(){if(state.busy||state.sleeping||stage.classList.contains('arrange-mode'))return;actions.classList.add('open');actions.setAttribute('aria-hidden','false')}
@@ -104,30 +87,18 @@
     return{x:930,walkY:730,sleepY:724,sleepW:175};
   }
 
-  function waitForFrames(max=4500){
-    if(framesReady)return Promise.resolve(true);
-    return new Promise(resolve=>{
-      const start=performance.now();
-      const check=()=>{
-        if(framesReady)return resolve(true);
-        if(performance.now()-start>max)return resolve(false);
-        setTimeout(check,60);
-      };
-      check();
-    });
-  }
-
-  async function walkTo(x,y,duration=1750){
-    await waitForFrames();
+  function walkTo(x,y,duration=1750){
     return new Promise(resolve=>{
       clearInterval(state.walkTimer);
       const sx=state.x,sy=state.y,start=performance.now(),left=x<sx;
-      character.classList.add('walking');character.classList.toggle('facing-left',left);
-      let frame=0;setPose(WALK[frame]);
+      character.classList.add('walking');
+      character.classList.toggle('facing-left',left);
+      let frame=0;
+      setPose(WALK[frame]);
       state.walkTimer=setInterval(()=>{
         frame=(frame+1)%WALK.length;
         setPose(WALK[frame]);
-      },170);
+      },180);
       const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
       function step(now){
         const t=Math.min(1,(now-start)/duration),q=ease(t);
@@ -144,66 +115,100 @@
   }
 
   async function goSleep(){
-    if(state.busy)return;state.busy=true;closeActions();
-    const spot=restSpot();say('Мотя идёт отдыхать…',1600);
+    if(state.busy)return;
+    state.busy=true;closeActions();
+    const spot=restSpot();
+    say('Мотя идёт отдыхать…',1600);
     await walkTo(spot.x,spot.walkY,1850);
-    character.classList.add('pose-swap');await new Promise(r=>setTimeout(r,150));
-    setPose('sleep');setPosition(spot.x,spot.sleepY,spot.sleepW);
-    character.classList.remove('pose-swap');character.classList.add('sleeping');
+    character.classList.add('pose-swap');
+    await new Promise(r=>setTimeout(r,150));
+    setPose('sleep');
+    setPosition(spot.x,spot.sleepY,spot.sleepW);
+    character.classList.remove('pose-swap');
+    character.classList.add('sleeping');
     state.sleeping=true;state.busy=false;
     say('Тсс… Мотя уснула. Нажми на неё, чтобы разбудить.',3000);
-    clearTimeout(state.sleepTimer);state.sleepTimer=setTimeout(()=>wakeUp(true),9000);
+    clearTimeout(state.sleepTimer);
+    state.sleepTimer=setTimeout(()=>wakeUp(true),9000);
   }
 
   async function wakeUp(auto=false){
     if(!state.sleeping||state.busy)return;
-    clearTimeout(state.sleepTimer);state.sleeping=false;state.busy=true;character.classList.remove('sleeping');
-    const spot=restSpot();setPose('sit');setPosition(spot.x,spot.walkY,205);
+    clearTimeout(state.sleepTimer);state.sleeping=false;state.busy=true;
+    character.classList.remove('sleeping');
+    const spot=restSpot();
+    setPose('sit');setPosition(spot.x,spot.walkY,205);
     say(auto?'Мотя проснулась!':'Доброе утро, Мотя!',1600);
-    await new Promise(r=>setTimeout(r,1100));await walkTo(HOME.x,HOME.y,1800);
+    await new Promise(r=>setTimeout(r,1100));
+    await walkTo(HOME.x,HOME.y,1800);
     setPose('idle');setPosition(HOME.x,HOME.y,HOME.w);state.busy=false;
   }
 
-  async function play(){
-    if(state.busy||state.sleeping)return;state.busy=true;closeActions();await waitForFrames();
-    setPose('play');character.classList.add('happy-bounce');say('Ура! Поиграем ♡',1900);
+  function play(){
+    if(state.busy||state.sleeping)return;
+    state.busy=true;closeActions();setPose('play');character.classList.add('happy-bounce');say('Ура! Поиграем ♡',1900);
     setTimeout(()=>{character.classList.remove('happy-bounce');setPose('idle');state.busy=false},2400);
   }
-  async function mood(){
-    if(state.busy||state.sleeping)return;state.busy=true;closeActions();await waitForFrames();
-    setPose('sad');character.classList.add('sad-mode');say('Я чуть-чуть скучаю. Погладишь меня?',2600);
+  function mood(){
+    if(state.busy||state.sleeping)return;
+    state.busy=true;closeActions();setPose('sad');character.classList.add('sad-mode');say('Я чуть-чуть скучаю. Погладишь меня?',2600);
     setTimeout(()=>{character.classList.remove('sad-mode');setPose('idle');state.busy=false},3200);
   }
 
-  actions.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(!b)return;if(b.dataset.action==='sleep')goSleep();else if(b.dataset.action==='play')play();else mood()});
-  character.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(state.sleeping)return wakeUp(false);if(state.busy)return;actions.classList.contains('open')?closeActions():openActions()});
+  actions.addEventListener('click',e=>{
+    const b=e.target.closest('[data-action]');if(!b)return;
+    if(b.dataset.action==='sleep')goSleep();
+    else if(b.dataset.action==='play')play();
+    else mood();
+  });
+  character.addEventListener('click',e=>{
+    e.preventDefault();e.stopPropagation();
+    if(state.sleeping)return wakeUp(false);
+    if(state.busy)return;
+    actions.classList.contains('open')?closeActions():openActions();
+  });
   document.getElementById('arrange')?.addEventListener('click',closeActions);
 
   const intro=document.createElement('section');
-  intro.className='motya-intro';intro.setAttribute('aria-label','Знакомство с Мотей');
+  intro.className='motya-intro';
+  intro.setAttribute('aria-label','Знакомство с Мотей');
   intro.innerHTML='<div class="motya-intro-card"><button class="motya-intro-close" type="button" aria-label="Закрыть знакомство">×</button><div class="motya-intro-dog">'+spriteMarkup()+'</div><div class="motya-intro-copy"><span class="motya-kicker">Твой цифровой питомец</span><div class="motya-type" aria-live="polite"></div><span class="motya-caret" aria-hidden="true"></span></div><div class="motya-intro-actions"><button type="button" data-intro="breed" class="secondary">Узнать о таксах</button><button type="button" data-intro="care" class="primary">Позаботиться о Моте</button></div><div class="motya-breed" hidden><b>Три вещи о таксах</b><p><span>01</span>Таксы обожают нюхать, искать и копать - это наследие норной охоты.</p><p><span>02</span>Длинную спину важно беречь от лишних прыжков и поддерживать мышцы.</p><p><span>03</span>Таксам полезны задачи для головы: поиск лакомств, команды и игры.</p><button type="button" data-intro="back">Вернуться к Моте</button></div></div>';
-  stage.appendChild(intro);stage.classList.add('motya-intro-open');
-  const introSprite=intro.querySelector('.motya-sprite');applyFrame(introSprite,'idle');
+  stage.appendChild(intro);
+  stage.classList.add('motya-intro-open');
+  const introSprite=intro.querySelector('.motya-sprite');
+  setSprite(introSprite,'idle');
+
   const typeEl=intro.querySelector('.motya-type'),caret=intro.querySelector('.motya-caret'),introActions=intro.querySelector('.motya-intro-actions'),breed=intro.querySelector('.motya-breed'),copy=intro.querySelector('.motya-intro-copy'),introDog=intro.querySelector('.motya-intro-dog');
-  const message='Привет! Я Мотя. Я твой цифровой питомец и помогу тебе ухаживать за твоей таксой.';let i=0,timer=0;
+  const message='Привет! Я Мотя. Я твой цифровой питомец и помогу тебе ухаживать за твоей таксой.';
+  let i=0,timer=0;
   function typeNext(){if(i>=message.length){caret.classList.add('done');introActions.classList.add('ready');return}typeEl.textContent+=message[i++];timer=setTimeout(typeNext,26)}
   setTimeout(typeNext,350);
 
   async function enterCare(){
-    state.busy=true;await waitForFrames();
-    setPosition(HOME.x-260,HOME.y,HOME.w);setPose('walk1');
+    state.busy=true;
+    setPosition(HOME.x-260,HOME.y,HOME.w);
+    setPose('walk1');
     await walkTo(HOME.x,HOME.y,1550);
     setPose('idle');setPosition(HOME.x,HOME.y,HOME.w);state.busy=false;
-    say('Нажми на Мотю - выберем занятие.',2400);setTimeout(openActions,260);
+    say('Нажми на Мотю - выберем занятие.',2400);
+    setTimeout(openActions,260);
   }
-  function closeIntro(care=false){clearTimeout(timer);intro.classList.add('closing');stage.classList.remove('motya-intro-open');setTimeout(()=>intro.remove(),350);if(care)setTimeout(enterCare,390)}
+  function closeIntro(care=false){
+    clearTimeout(timer);
+    intro.classList.add('closing');stage.classList.remove('motya-intro-open');
+    setTimeout(()=>intro.remove(),350);
+    if(care)setTimeout(enterCare,390);
+  }
   intro.addEventListener('click',e=>{
     if(e.target.closest('.motya-intro-close'))return closeIntro(false);
     const b=e.target.closest('[data-intro]');if(!b)return;
     if(b.dataset.intro==='care')return closeIntro(true);
-    if(b.dataset.intro==='breed'){copy.hidden=true;introActions.hidden=true;introDog.classList.add('small');breed.hidden=false}
-    else{breed.hidden=true;copy.hidden=false;introActions.hidden=false;introDog.classList.remove('small')}
+    if(b.dataset.intro==='breed'){
+      copy.hidden=true;introActions.hidden=true;introDog.classList.add('small');breed.hidden=false;
+    }else{
+      breed.hidden=true;copy.hidden=false;introActions.hidden=false;introDog.classList.remove('small');
+    }
   });
 
-  window.motyaGame={openActions,goSleep,wakeUp,setPose,framesReady:()=>framesReady,frameData};
+  window.motyaGame={openActions,goSleep,wakeUp,setPose,frameFiles:FRAME_FILES};
 })();
